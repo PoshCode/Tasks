@@ -18,39 +18,21 @@ param(
     [double]$DotNet = "7.0",
 
     # Path to a RequiredModules.psd1
-    # If this file is missing, we'll still install InvokeBuild
-    # If you have RequiredModules, don't forget to include InvokeBuild
+    # If this file is present, Install-RequiredModule will be run on it.
+    # NOTE: If this file is missing, we'll still install InvokeBuild, but if you have a RequiredModules.psd1, don't forget to include InvokeBuild in it!
     $RequiredModulesPath = (Join-Path $pwd "RequiredModules.psd1"),
+
+    # Path to a .*proj file or .sln
+    # If this file is present, dotnet restore will be run on it.
+    $ProjectFile = (Join-Path $pwd "*.*proj"),
 
     # Scope for installation (of scripts and modules). Defaults to CurrentUser
     [ValidateSet("AllUsers", "CurrentUser")]
     $Scope = "CurrentUser"
 )
 $InformationPreference = "Continue"
-
-Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-Write-Information "Ensure Required Modules"
-if (!($InstallRequiredModule = Get-Command Install-RequiredModule -ErrorAction SilentlyContinue)) {
-    # This should install in the user's script folder (wherever that is). Passthru will tell us where.
-    $Script = Install-Script Install-RequiredModule -NoPathUpdate -Force -PassThru -Scope $Scope
-    $InstallRequiredModule = Join-Path $Script.InstalledLocation "Install-RequiredModule.ps1"
-    Set-Alias -Scope Global Install-RequiredModule $InstallRequiredModule
-}
-
-Write-Information "Process $RequiredModulesPath"
-if (Test-Path $RequiredModulesPath) {
-    Write-Information "Install-RequiredModule $RequiredModulesPath -Scope $Scope -Confirm:`$false -Verbose"
-    & $InstallRequiredModule $RequiredModulesPath -Scope $Scope -Confirm:$false -Verbose
-} else {
-    Write-Information "Install-RequiredModule @{ InvokeBuild = '5.*' } -Scope $Scope -Confirm:`$false -Verbose"
-    # The default required modules is just InvokeBuild
-    & $InstallRequiredModule @{ InvokeBuild = "5.*" } -Scope $Scope -Confirm:$false -Verbose
-}
-
-foreach ($installErr in @($IRM_InstallErrors)) {
-    Write-Warning "ERROR: $installErr"
-    Write-Warning "STACKTRACE: $($installErr.ScriptStackTrace)"
-}
+$ErrorView = 'DetailedView'
+$ErrorActionPreference = 'Stop'
 
 Write-Information "Ensure dotnet version"
 if (!((Get-Command dotnet -ErrorAction SilentlyContinue) -and ([semver](dotnet --version) -gt $DotNet))) {
@@ -69,9 +51,42 @@ if (!((Get-Command dotnet -ErrorAction SilentlyContinue) -and ([semver](dotnet -
     }
 }
 
+if (Test-Path $ProjectFile) {
+    Write-Information "Ensure dotnet package dependencies"
+    split-path $ProjectFile -Parent | push-location
+    dotnet restore $ProjectFile --ucr
+}
+
 Write-Information "Ensure GitVersion"
 if (!(Get-Command dotnet-gitversion -ErrorAction SilentlyContinue)) {
-    # TODO: implement semi-permanent PATH modification for github and azure
-    $ENV:PATH += ([IO.Path]::PathSeparator) + (Convert-Path ~/.dotnet/tools)
     dotnet tool update GitVersion.Tool --global # --verbosity normal
+    # TODO: implement semi-permanent PATH modification for github and azure
+    $ENV:PATH += ([IO.Path]::PathSeparator) + (Convert-Path $HOME/.dotnet/tools)
+}
+
+Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+Write-Information "Ensure Install-RequiredModule"
+if (!($InstallRequiredModule = Get-Command Install-RequiredModule -ErrorAction SilentlyContinue)) {
+    # This should install in the user's script folder (wherever that is). Passthru will tell us where.
+    $Script = Install-Script Install-RequiredModule -NoPathUpdate -Force -PassThru -Scope $Scope
+
+    # TODO: implement semi-permanent PATH modification for github and azure
+    $ENV:PATH += ([IO.Path]::PathSeparator) + (Convert-Path $Script.InstalledLocation)
+
+    $InstallRequiredModule = Join-Path $Script.InstalledLocation "Install-RequiredModule.ps1"
+    # Set-Alias -Scope Global Install-RequiredModule $InstallRequiredModule
+}
+
+if (Test-Path $RequiredModulesPath) {
+    Write-Information "Ensure Required Modules"
+    & $InstallRequiredModule $RequiredModulesPath -Scope $Scope -Confirm:$false -Verbose
+} else {
+    Write-Information "Ensure Required Modules"
+    # The default required modules is just InvokeBuild
+    & $InstallRequiredModule @{ InvokeBuild = "5.*" } -Scope $Scope -Confirm:$false -Verbose
+}
+
+foreach ($installErr in @($IRM_InstallErrors)) {
+    Write-Warning "ERROR: $installErr"
+    Write-Warning "STACKTRACE: $($installErr.ScriptStackTrace)"
 }

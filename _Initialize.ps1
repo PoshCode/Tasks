@@ -16,6 +16,10 @@ param(
     [switch]$NoTasks
 
 )
+$InformationPreference = "Continue"
+$ErrorView = 'DetailedView'
+$ErrorActionPreference = 'Stop'
+
 Write-Information "Initializing build variables"
 # BuildRoot is provided by Invoke-Build
 Write-Information "  BuildRoot: $BuildRoot"
