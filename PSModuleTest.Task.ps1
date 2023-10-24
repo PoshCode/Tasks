@@ -44,6 +44,7 @@ Add-BuildTask PSModuleTest @{
             $TestModulePath = @($OutputRoot) + @($Env:PSMODULEPATH -split [IO.Path]::PathSeparator -ne $OutputRoot) -join [IO.Path]::PathSeparator
             $Env:PSMODULEPATH, $OldModulePath = $TestModulePath, $Env:PSMODULEPATH
             try {
+                $PSModuleManifestPath = Get-ChildItem $PSModuleOutputPath -Filter "$PSModuleName.psm1" -Recurse -ErrorAction Ignore
                 Write-Output (@(
                         "Set PSModulePath:"
                         $Env:PSMODULEPATH
@@ -57,7 +58,7 @@ Add-BuildTask PSModuleTest @{
 
 
                 if ($Script:RequiredCodeCoverage -gt 0.00) {
-                    $CodeCoveragePath = [IO.Path]::ChangeExtension($PSModuleManifestPath, ".psm1")
+                    $CodeCoveragePath = $PSModuleManifestPath
                     $CodeCoverageOutputPath = "$OutputRoot\coverage.xml"
                     $CodeCoveragePercentTarget = $RequiredCodeCoverage
                 }

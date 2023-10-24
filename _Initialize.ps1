@@ -6,16 +6,10 @@
 #>
 [CmdletBinding()]
 param(
-    # Initialize the dotnet variables and import the dotnet tasks
-    [switch]$DotNet,
-
-    # Initialize the PowerShell module variables and import the tasks
-    [switch]$PowerShell,
-
     # Skip importing tasks
     [switch]$NoTasks
-
 )
+
 $InformationPreference = "Continue"
 $ErrorView = 'DetailedView'
 $ErrorActionPreference = 'Stop'
@@ -116,8 +110,10 @@ Write-Information "  BranchName: $script:BranchName"
 #endregion
 
 #region DotNet task variables. Find the DotNet projects once.
-if ($DotNet) {
+if ($dotnetProjects) {
     Write-Information "Initializing DotNet build variables"
+    # The DotNetPublishRoot is the "publish" folder within the OutputRoot (used for dotnet publish output)
+    $script:DotNetPublishRoot ??= Join-Path $script:OutputRoot publish
 
     # The projects are expected to each be in their own folder
     # Dotnet allows us to pass it the _folder_ that we want to build/test
@@ -155,12 +151,8 @@ if ($DotNet) {
 #endregion
 
 #region PowerShell Module task variables. Find the PowerShell module once.
-if ($PowerShell) {
+if ($PSModuleName) {
     Write-Information "Initializing PSModule build variables"
-    # Any of these variables can be set in the .build.ps1 to override our defaults:
-    # $PSModuleName, $PSModuleSourceRoot,
-    $script:PSModuleName ??= "*"
-
     # We're looking for either a build.psd1 or the module manifest:
     #   .\src\ModuleName.psd1
     #   .\source\ModuleName.psd1
@@ -236,10 +228,6 @@ if ($PowerShell) {
     $script:PSModulePublishUri ??= $Env:PSMODULE_PUBLISH_URI
     $script:PSModulePublishKey ??= $Env:PSMODULE_PUBLISH_KEY
     Write-Information "  PowerShellModulePublishUri: $PowerShellModulePublishUri"
-
-    # THESE variables can't be overridden, they're conventions based on $BuildRoot and $OutputRoot
-    $Script:PSModuleManifestPath = Join-Path $PSModuleOutputPath "$PSModuleName.psd1"
-    Write-Information "  PSModuleManifestPath: $PSModuleManifestPath"
 }
 #endregion
 

@@ -1,8 +1,6 @@
 Add-BuildTask PSModuleImport "PSModuleRestore", "PSModuleBuild", {
     # Always re-import the module -- don't try to guess if it's been changed
-    if (-not(Test-Path $PSModuleManifestPath)) {
-        throw "Could not find ManifestPath '$PSModuleManifestPath'"
-    } else {
+    if ($PSModuleManifestPath = Get-ChildItem $PSModuleOutputPath -Filter "$PSModuleName.psm1" -Recurse -ErrorAction Ignore) {
 
         if (($loaded = Get-Module -Name $PSModuleName -All -ErrorAction Ignore)) {
             "Unloading Module '$PSModuleName' $($loaded.Version -join ', ')"
@@ -11,5 +9,7 @@ Add-BuildTask PSModuleImport "PSModuleRestore", "PSModuleBuild", {
 
         "Importing Module '$PSModuleName' $($Script:GitVersion.SemVer) from '$PSModuleManifestPath'"
         Import-Module -Name $PSModuleManifestPath -Force -PassThru:$PassThru
+    } else {
+        throw "Cannot find module manifest $PSModuleName in '$PSModuleOutputPath'"
     }
 }

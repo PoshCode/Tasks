@@ -8,13 +8,12 @@ Add-BuildTask DotNetPublish @{
     }
     Outputs = {
         Split-Path $dotnetProjects -Leaf |
-            Join-Path -Path { "$PublishRoot${/}$_" } -ChildPath { "$_.dll" }
+            Join-Path -Path { "$DotNetPublishRoot${/}$_" } -ChildPath { "$_.dll" }
     }
     Jobs    = "DotNetBuild", {
         $local:options = @{} + $script:dotnetOptions
 
-        # The PublishRoot is the pub folder within the OutputRoot (used for dotnet publish output)
-        $script:PublishRoot = New-Item (Join-Path $script:OutputRoot publish) -ItemType Root -Force -ErrorAction SilentlyContinue | Convert-Path
+        $script:DotNetPublishRoot = New-Item $script:DotNetPublishRoot -ItemType Root -Force -ErrorAction SilentlyContinue | Convert-Path
 
         # We never do self-contained builds
         if ($options.ContainsKey("-runtime") -or $options.ContainsKey("-ucr")) {
@@ -28,8 +27,8 @@ Add-BuildTask DotNetPublish @{
             }
 
             Set-Location $project
-            Write-Build Gray "dotnet publish --output $PublishRoot${/}$Name --no-build --configuration $configuration -p $($options["p"])"
-            dotnet publish --output "$PublishRoot${/}$Name" --no-build --configuration $configuration
+            Write-Build Gray "dotnet publish --output $DotNetPublishRoot${/}$Name --no-build --configuration $configuration -p $($options["p"])"
+            dotnet publish --output "$DotNetPublishRoot${/}$Name" --no-build --configuration $configuration
         }
     }
 }
