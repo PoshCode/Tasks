@@ -265,13 +265,15 @@ if (!$NoTasks) {
     }
 }
 
-if ($PowerShell) {
+if ($PowerShell -and $DotNet) {
+    Add-BuildTask Build GitVersion, DotNetRestore, PSModuleRestore, GitVersion, DotNetBuild, PSModuleBuild #, PSModuleBuildHelp
+    Add-BuildTask Test DotNetTest, PSModuleAnalyze, PSModuleTest
+    Add-BuildTask Publish TagSource, DotNetPublish, PSModulePublish
+} elseif ($PowerShell) {
     Add-BuildTask Build PSModuleRestore, GitVersion, PSModuleBuild #, PSModuleBuildHelp
-    Add-BuildTask Test Build, PSModuleAnalyze, PSModuleImport, PSModuleTest
+    Add-BuildTask Test Build, PSModuleAnalyze, PSModuleTest
     Add-BuildTask Publish Build, Test, TagSource, PSModulePublish
-}
-
-if ($DotNet) {
+} elseif ($DotNet) {
     Add-BuildTask Build DotNetRestore, GitVersion, DotNetBuild
     Add-BuildTask Test Build, DotNetTest
     Add-BuildTask Publish Build, Test, TagSource, DotNetPublish
