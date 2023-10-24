@@ -13,7 +13,7 @@ Add-BuildTask DotNetPublish @{
     Jobs    = "DotNetBuild", {
         $local:options = @{} + $script:dotnetOptions
 
-        $script:DotNetPublishRoot = New-Item $script:DotNetPublishRoot -ItemType Root -Force -ErrorAction SilentlyContinue | Convert-Path
+        $script:DotNetPublishRoot = New-Item $script:DotNetPublishRoot -ItemType Directory -Force -ErrorAction SilentlyContinue | Convert-Path
 
         # We never do self-contained builds
         if ($options.ContainsKey("-runtime") -or $options.ContainsKey("-ucr")) {
@@ -27,8 +27,9 @@ Add-BuildTask DotNetPublish @{
             }
 
             Set-Location $project
-            Write-Build Gray "dotnet publish --output $DotNetPublishRoot${/}$Name --no-build --configuration $configuration -p $($options["p"])"
-            dotnet publish --output "$DotNetPublishRoot${/}$Name" --no-build --configuration $configuration
+            $OutputFolder = @($dotnetProjects).Count -gt 1 ? "$DotNetPublishRoot${/}$Name" : $DotNetPublishRoot
+            Write-Build Gray "dotnet publish --output $OutputFolder --no-build --configuration $configuration -p $($options["p"])"
+            dotnet publish --output "$OutputFolder" --no-build --configuration $configuration
         }
     }
 }

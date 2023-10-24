@@ -110,7 +110,7 @@ Write-Information "  BranchName: $script:BranchName"
 #endregion
 
 #region DotNet task variables. Find the DotNet projects once.
-if ($dotnetProjects) {
+if (([bool]$DotNet = $dotnetProjects -or $DotNetPublishRoot)) {
     Write-Information "Initializing DotNet build variables"
     # The DotNetPublishRoot is the "publish" folder within the OutputRoot (used for dotnet publish output)
     $script:DotNetPublishRoot ??= Join-Path $script:OutputRoot publish
@@ -243,15 +243,15 @@ if ($dotnetProjects) {
 
 
 ## The first task defined is the default task. Default to build and test.
-if ($PSModuleName -and $DotNet) {
+if ($PSModuleName -and $dotnetProjects -or $DotNetPublishRoot) {
     Add-BuildTask Test Build, DotNetTest, PSModuleAnalyze, PSModuleTest
-    Add-BuildTask Build GitVersion, DotNetRestore, PSModuleRestore, GitVersion, DotNetBuild, PSModuleBuild #, PSModuleBuildHelp
+    Add-BuildTask Build DotNetRestore, PSModuleRestore, GitVersion, DotNetBuild, DotNetPublish, PSModuleBuild #, PSModuleBuildHelp
     Add-BuildTask Publish TagSource, DotNetPublish, PSModulePublish
 } elseif ($PSModuleName) {
     Add-BuildTask Test Build, PSModuleAnalyze, PSModuleTest
     Add-BuildTask Build PSModuleRestore, GitVersion, PSModuleBuild #, PSModuleBuildHelp
     Add-BuildTask Publish Test, TagSource, PSModulePublish
-} elseif ($DotNet) {
+} elseif ($dotnetProjects) {
     Add-BuildTask Test Build, DotNetTest
     Add-BuildTask Build DotNetRestore, GitVersion, DotNetBuild
     Add-BuildTask Publish Test, TagSource, DotNetPublish
@@ -263,7 +263,7 @@ if (!$NoTasks) {
     Write-Information "Import Shared Tasks"
     foreach ($taskfile in Get-ChildItem -Path $PSScriptRoot -Filter *.Task.ps1) {
         if (!$DotNet -and $taskfile.Name -match "DotNet") { continue }
-        if (!$PowerShell -and $taskfile.Name -match "PSModule") { continue }
+        if (!$PSModuleName -and $taskfile.Name -match "PSModule") { continue }
         Write-Information "  $($taskfile.FullName)"
         . $taskfile.FullName
     }
