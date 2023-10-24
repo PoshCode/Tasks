@@ -43,7 +43,9 @@ Write-Information "  Configuration: $script:Configuration"
 
 # NOTE: this variable is currently also used for Pester formatting ...
 # So we must use either "AzureDevOps", "GithubActions", or "None"
-$script:BuildSystem = if (Test-Path ENV:GITHUB_ACTIONS) {
+$script:BuildSystem = if (Test-Path Env:EARTHLY_BUILD_SHA) {
+    "Earthly"
+} elseif (Test-Path Env:GITHUB_ACTIONS) {
     "GithubActions"
 } elseif (Test-Path Env:SYSTEM_TEAMFOUNDATIONCOLLECTIONURI) {
     "AzureDevops"
@@ -72,34 +74,37 @@ if ($script:BuildSystem -eq "AzureDevops") {
 
 # There are a few different environment/variables it could be, and then our fallback
 $Script:OutputRoot = $script:OutputRoot ??
-                          $Env:BUILD_BINARIESDIRECTORY ?? # Azure
-                          (Join-Path -Path $BuildRoot -ChildPath 'output')
+                        $Env:OUTPUT_ROOT ?? # I set this for earthly
+                        $Env:BUILD_BINARIESDIRECTORY ?? # Azure
+                        (Join-Path -Path $BuildRoot -ChildPath 'output')
 New-Item -Type Directory -Path $OutputRoot -Force | Out-Null
 Write-Information "  OutputRoot: $OutputRoot"
 
 $Script:TestResultsRoot = $script:TestResultsRoot ??
-                               $Env:COMMON_TESTRESULTSDIRECTORY ?? # Azure
-                               $Env:TEST_RESULTS_DIRECTORY ??
-                               (Join-Path -Path $OutputRoot -ChildPath 'tests')
+                            $Env:TEST_ROOT ?? # I set this for earthly
+                            $Env:COMMON_TESTRESULTSDIRECTORY ?? # Azure
+                            $Env:TEST_RESULTS_DIRECTORY ??
+                            (Join-Path -Path $OutputRoot -ChildPath 'tests')
 New-Item -Type Directory -Path $TestResultsRoot -Force | Out-Null
 Write-Information "  TestResultsRoot: $TestResultsRoot"
 
 ### IMPORTANT: Our local TempRoot does not cleaned the way the Azure one does
 $Script:TempRoot = $script:TempRoot ??
-                        $Env:RUNNER_TEMP ?? # Github
-                        $Env:AGENT_TEMPDIRECTORY ?? # Azure
-                        (Join-Path ($Env:TEMP ?? $Env:TMP ?? "$BuildRoot/Tmp_$(Get-Date -f yyyyMMddThhmmss)") -ChildPath 'InvokeBuild')
+                    $Env:TEMP_ROOT ?? # I set this for earthly
+                    $Env:RUNNER_TEMP ?? # Github
+                    $Env:AGENT_TEMPDIRECTORY ?? # Azure
+                    (Join-Path ($Env:TEMP ?? $Env:TMP ?? "$BuildRoot/Tmp_$(Get-Date -f yyyyMMddThhmmss)") -ChildPath 'InvokeBuild')
 New-Item -Type Directory -Path $TempRoot -Force | Out-Null
 Write-Information "  TempRoot: $TempRoot"
 
 # Git variables that we could probably use:
-$Script:GitSha = $script:GitSha ?? $ENV:GITHUB_SHA ?? $ENV:BUILD_SOURCEVERSION
+$Script:GitSha = $script:GitSha ?? $Env:EARTHLY_BUILD_SHA ?? $Env:GITHUB_SHA ?? $Env:BUILD_SOURCEVERSION
 if (!$Script:GitSha) {
     $Script:GitSha = git rev-parse HEAD
 }
 Write-Information "  GitSha: $Script:GitSha"
 
-$script:BranchName = $script:BranchName ?? $Env:BUILD_SOURCEBRANCHNAME
+$script:BranchName = $script:BranchName ?? $Env:EARTHLY_GIT_BRANCH ?? $Env:BUILD_SOURCEBRANCHNAME
 if (!$script:BranchName -and (Get-Command git -CommandType Application -ErrorAction Ignore)) {
     $script:BranchName = (git branch --show-current) -replace ".*/"
 }
@@ -241,7 +246,7 @@ if (!$NoTasks) {
     foreach ($taskfile in Get-ChildItem -Path $PSScriptRoot -Filter *.Task.ps1) {
         if (!$DotNet -and $taskfile.Name -match "DotNet") { continue }
         if (!$PowerShell -and $taskfile.Name -match "PSModule") { continue }
-        Write-Information "    $($taskfile.FullName)"
+        Write-Information "  $($taskfile.FullName)"
         . $taskfile.FullName
     }
 }

@@ -30,22 +30,24 @@ $InformationPreference = "Continue"
 
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 Write-Information "Ensure Required Modules"
-if (!(Get-Command Install-RequiredModule -ErrorAction SilentlyContinue)) {
+if (!($InstallRequiredModule = Get-Command Install-RequiredModule -ErrorAction SilentlyContinue)) {
     # This should install in the user's script folder (wherever that is). Passthru will tell us where.
     $Script = Install-Script Install-RequiredModule -NoPathUpdate -Force -PassThru -Scope $Scope
-    Set-Alias Install-RequiredModule (Join-Path $Script.InstalledLocation "Install-RequiredModule.ps1") -Scope Global
+    $InstallRequiredModule = Join-Path $Script.InstalledLocation "Install-RequiredModule.ps1"
+    Set-Alias -Scope Global Install-RequiredModule $InstallRequiredModule
 }
 
+Write-Information "Process $RequiredModulesPath"
 if (Test-Path $RequiredModulesPath) {
-    Install-RequiredModule $RequiredModulesPath -Scope $Scope -Confirm:$false -Verbose
+    Write-Information "Install-RequiredModule $RequiredModulesPath -Scope $Scope -Confirm:`$false -Verbose"
+    & $InstallRequiredModule $RequiredModulesPath -Scope $Scope -Confirm:$false -Verbose
 } else {
+    Write-Information "Install-RequiredModule @{ InvokeBuild = '5.*' } -Scope $Scope -Confirm:`$false -Verbose"
     # The default required modules is just InvokeBuild
-    Install-RequiredModule @{
-        InvokeBuild = "5.*"
-    } -Scope $Scope -Confirm:$false -Verbose
+    & $InstallRequiredModule @{ InvokeBuild = "5.*" } -Scope $Scope -Confirm:$false -Verbose
 }
 
-foreach ($installErr in $IRM_InstallErrors) {
+foreach ($installErr in @($IRM_InstallErrors)) {
     Write-Warning "ERROR: $installErr"
     Write-Warning "STACKTRACE: $($installErr.ScriptStackTrace)"
 }
