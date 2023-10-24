@@ -37,7 +37,6 @@ Add-BuildTask PSModulePublish {
         Write-Warning ("Skipping deployment: To deploy, ensure that...`n" +
         "`t* You are in a known build system (Current: $BuildSystem)`n" +
         "`t* You are committing to the main branch (Current: $BranchName) `n" +
-        "`t* The repository APIKey is defined in `$PSModulePublishKey (Current: $(![string]::IsNullOrWhiteSpace($PSModulePublishKey))) `n" +
-        "`t* This is not a pull request")
+        "`t* The repository APIKey is defined in `$PSModulePublishKey (Current: $(![string]::IsNullOrWhiteSpace($PSModulePublishKey)))")
     }
 }
