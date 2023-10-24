@@ -84,7 +84,6 @@ Add-BuildTask GitVersion @{
             try {
                 $script:GitVersion = Get-Content $VersionFile | ConvertFrom-Json -ErrorAction Stop
                 Set-Variable "GitVersion.$Name" $GitVersion -Scope Script
-                Get-Content $VersionFile | Out-Host
                 if (@($PackageNames).Count -eq 1) {
                     Set-Content "Env:GITVERSION" $GitVersion.MajorMinorPatch
                 }

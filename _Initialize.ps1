@@ -254,6 +254,22 @@ if ($dotnetProjects) {
 })
 
 
+## The first task defined is the default task. Default to build and test.
+if ($PowerShell -and $DotNet) {
+    Add-BuildTask Test Build, DotNetTest, PSModuleAnalyze, PSModuleTest
+    Add-BuildTask Build GitVersion, DotNetRestore, PSModuleRestore, GitVersion, DotNetBuild, PSModuleBuild #, PSModuleBuildHelp
+    Add-BuildTask Publish TagSource, DotNetPublish, PSModulePublish
+} elseif ($PowerShell) {
+    Add-BuildTask Test Build, PSModuleAnalyze, PSModuleTest
+    Add-BuildTask Build PSModuleRestore, GitVersion, PSModuleBuild #, PSModuleBuildHelp
+    Add-BuildTask Publish Test, TagSource, PSModulePublish
+} elseif ($DotNet) {
+    Add-BuildTask Test Build, DotNetTest
+    Add-BuildTask Build DotNetRestore, GitVersion, DotNetBuild
+    Add-BuildTask Publish Test, TagSource, DotNetPublish
+}
+
+
 # Finally, import all the Task.ps1 files in this folder
 if (!$NoTasks) {
     Write-Information "Import Shared Tasks"
@@ -263,18 +279,4 @@ if (!$NoTasks) {
         Write-Information "  $($taskfile.FullName)"
         . $taskfile.FullName
     }
-}
-
-if ($PowerShell -and $DotNet) {
-    Add-BuildTask Build GitVersion, DotNetRestore, PSModuleRestore, GitVersion, DotNetBuild, PSModuleBuild #, PSModuleBuildHelp
-    Add-BuildTask Test DotNetTest, PSModuleAnalyze, PSModuleTest
-    Add-BuildTask Publish TagSource, DotNetPublish, PSModulePublish
-} elseif ($PowerShell) {
-    Add-BuildTask Build PSModuleRestore, GitVersion, PSModuleBuild #, PSModuleBuildHelp
-    Add-BuildTask Test Build, PSModuleAnalyze, PSModuleTest
-    Add-BuildTask Publish Build, Test, TagSource, PSModulePublish
-} elseif ($DotNet) {
-    Add-BuildTask Build DotNetRestore, GitVersion, DotNetBuild
-    Add-BuildTask Test Build, DotNetTest
-    Add-BuildTask Publish Build, Test, TagSource, DotNetPublish
 }
