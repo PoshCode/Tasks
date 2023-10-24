@@ -4,7 +4,7 @@ Add-BuildTask PSModuleBuild @{
     Outputs = { Join-Path $OutputRoot $PSModuleName "$PSModuleName.psm1" } # don't take off the script block, need to resolve AFTER init
     Jobs    = "PSModuleRestore", {
         $InformationPreference = "Continue"
-        Write-Information "Building module $PSModuleName -Semver $($script:GitVersion.InformationalVersion)"
-        Build-Module -SourcePath $PSModuleSourcePath -Destination $PSModuleOutputPath -SemVer $script:GitVersion.InformationalVersion
+        Write-Information "Build-Module -SourcePath $PSModuleSourcePath -Destination $PSModuleOutputPath -SemVer $($script:GitVersion.InformationalVersion)"
+        Build-Module -SourcePath $PSModuleSourcePath -Destination $PSModuleOutputPath -SemVer $script:GitVersion.InformationalVersion -Verbose -Debug
     }
 }

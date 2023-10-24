@@ -86,7 +86,9 @@ if (Test-Path $RequiredModulesPath) {
     & $InstallRequiredModule @{ InvokeBuild = "5.*" } -Scope $Scope -Confirm:$false
 }
 
-foreach ($installErr in @($IRM_InstallErrors)) {
-    Write-Warning "ERROR: $installErr"
-    Write-Warning "STACKTRACE: $($installErr.ScriptStackTrace)"
+if ($IRM_InstallErrors) {
+    foreach ($installErr in @($IRM_InstallErrors)) {
+        Write-Warning "ERROR: $installErr"
+        Write-Warning "STACKTRACE: $($installErr.ScriptStackTrace)"
+    }
 }
