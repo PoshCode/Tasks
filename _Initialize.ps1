@@ -243,6 +243,16 @@ if ($PowerShell) {
 }
 #endregion
 
+# PackageNames allows you to build and tag multiple packages from the same repository
+$script:PackageNames = $script:PackageNames ?? @(
+if ($dotnetProjects) {
+    (Split-Path $dotnetProjects -Leaf).ToLower()
+} elseif ($PSModuleName) {
+    @($PSModuleName)
+} else {
+    @("PSModule")
+})
+
 
 # Finally, import all the Task.ps1 files in this folder
 if (!$NoTasks) {

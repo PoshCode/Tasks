@@ -24,8 +24,6 @@ Add-BuildTask GitVersion @{
         }
     }
     Jobs    = {
-        $PackageNames = if ($dotnetProjects) { (Split-Path $dotnetProjects -Leaf).ToLower() } else { @("PSModule") }
-
         <# MonoRepo Madness
         # If this is a PR build, fetch the "description" which will go into the commit later
         # GET https://dev.azure.com/{organization}/{project}/_apis/sourceProviders/{providerName}/pullrequests/{pullRequestId}?repositoryId={repositoryId}&serviceEndpointId={serviceEndpointId}&api-version=7.0
@@ -62,10 +60,10 @@ Add-BuildTask GitVersion @{
             # Write-Host git commit "--ammend" "-m" "$commitMessage`n$GitVersionMessagePrefix:patch"
             # git commit --ammend -m "$commitMessage`n$GitVersionMessagePrefix:patch"
 
-            $GitVersionYaml = if (Test-Path "$BuildRoot/GitVersion.yml") {
-                "$BuildRoot/GitVersion.yml"
+            $GitVersionYaml = if (Test-Path (Join-Path $BuildRoot GitVersion.yml)) {
+                Join-Path $BuildRoot GitVersion.yml
             } else {
-                Convert-Path "$PSScriptRoot/Version.yml"
+                Convert-Path (Join-Path $PSScriptRoot GitVersion.yml)
             }
 
             $VersionFile = Join-Path $TempRoot -ChildPath "$GitVersionTagPrefix$GitSha.json"
