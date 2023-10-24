@@ -2,7 +2,6 @@ $Script:GitVersionMessagePrefix ??= "semver"
 $Script:GitVersionTagPrefix ??= "v"
 
 Add-BuildTask GitVersion @{
-    # This task should be skipped if there are no C# projects to build
     Inputs  = {
         # Exclude generated source files in /obj/ folders
         Get-ChildItem $BuildRoot -Recurse -File
@@ -85,6 +84,11 @@ Add-BuildTask GitVersion @{
             try {
                 $script:GitVersion = Get-Content $VersionFile | ConvertFrom-Json -ErrorAction Stop
                 Set-Variable "GitVersion.$Name" $GitVersion -Scope Script
+                Get-Content $VersionFile | Out-Host
+                if (@($PackageNames).Count -eq 1) {
+                    Set-Content "Env:GITVERSION" $GitVersion.MajorMinorPatch
+                }
+
             } catch {
                 Write-Warning "dotnet gitversion -config $GitVersionYaml -outputfile $VersionFile"
                 Write-Warning "GitVersionTagPrefix: $($GitVersionTagPrefix)"

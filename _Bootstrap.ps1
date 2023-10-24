@@ -79,11 +79,11 @@ if (!($InstallRequiredModule = Get-Command Install-RequiredModule -ErrorAction S
 
 if (Test-Path $RequiredModulesPath) {
     Write-Information "Ensure Required Modules"
-    & $InstallRequiredModule $RequiredModulesPath -Scope $Scope -Confirm:$false -Verbose
+    & $InstallRequiredModule $RequiredModulesPath -Scope $Scope -Confirm:$false
 } else {
     Write-Information "Ensure Required Modules"
     # The default required modules is just InvokeBuild
-    & $InstallRequiredModule @{ InvokeBuild = "5.*" } -Scope $Scope -Confirm:$false -Verbose
+    & $InstallRequiredModule @{ InvokeBuild = "5.*" } -Scope $Scope -Confirm:$false
 }
 
 foreach ($installErr in @($IRM_InstallErrors)) {
