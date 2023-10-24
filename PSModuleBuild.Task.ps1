@@ -5,6 +5,6 @@ Add-BuildTask PSModuleBuild @{
     Jobs    = "PSModuleRestore", {
         $InformationPreference = "Continue"
         Write-Information "Build-Module -SourcePath $PSModuleSourcePath -Destination $PSModuleOutputPath -SemVer $($script:GitVersion.InformationalVersion)"
-        Build-Module -SourcePath $PSModuleSourcePath -Destination $PSModuleOutputPath -SemVer $script:GitVersion.InformationalVersion -Verbose -Debug
+        Build-Module -SourcePath $PSModuleSourcePath -Destination $PSModuleOutputPath -SemVer $script:GitVersion.InformationalVersion -Verbose:$Verbose -Debug:$Debug
     }
 }

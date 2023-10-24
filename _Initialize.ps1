@@ -14,6 +14,13 @@ $InformationPreference = "Continue"
 $ErrorView = 'DetailedView'
 $ErrorActionPreference = 'Stop'
 
+if (!(Get-Variable Verbose -Scope Script -ErrorAction Ignore)) {
+    $script:Verbose = $false
+}
+if (!(Get-Variable Debug -Scope Script -ErrorAction Ignore)) {
+    $script:Debug = $false
+}
+
 Write-Information "Initializing build variables"
 # BuildRoot is provided by Invoke-Build
 Write-Information "  BuildRoot: $BuildRoot"

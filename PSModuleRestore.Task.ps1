@@ -9,7 +9,7 @@ Add-BuildTask PSModuleRestore @{
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
         # This should install in the user's script folder (wherever that is). Passthru will tell us where.
         $Script = Install-Script Install-RequiredModule -NoPathUpdate -Force -PassThru -Scope CurrentUser
-        & (Join-Path $Script.InstalledLocation "Install-RequiredModule.ps1") "$BuildRoot\RequiredModules.psd1" -Scope CurrentUser -Confirm:$false -Verbose
+        & (Join-Path $Script.InstalledLocation "Install-RequiredModule.ps1") "$BuildRoot\RequiredModules.psd1" -Scope CurrentUser -Confirm:$false -Verbose:$Verbose
 
         foreach ($installErr in $IRM_InstallErrors) {
             Write-Warning "ERROR: $installErr"
