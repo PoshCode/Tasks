@@ -7,8 +7,13 @@ Add-BuildTask DotNetPublish @{
             Where-Object FullName -NotMatch "[\\/]obj[\\/]"
     }
     Outputs = {
-        Split-Path $dotnetProjects -Leaf |
-            Join-Path -Path { "$DotNetPublishRoot${/}$_" } -ChildPath { "$_.dll" }
+        foreach ($project in $dotnetProjects) {
+            $Name = Split-Path $project -Leaf
+            $OutputFolder = @($dotnetProjects).Count -gt 1 ? "$DotNetPublishRoot${/}$Name" : $DotNetPublishRoot
+            $Expected = Join-Path $OutputFolder -ChildPath "$Name.dll"
+            Write-Host "Expected Output: $Expected"
+            $Expected
+        }
     }
     Jobs    = "DotNetBuild", {
         $local:options = @{} + $script:dotnetOptions
@@ -21,6 +26,7 @@ Add-BuildTask DotNetPublish @{
         }
 
         foreach ($project in $dotnetProjects) {
+            Write-Host "Publishing $project"
             $Name = Split-Path $project -Leaf
             if (Test-Path "Variable:GitVersion.$((Split-Path $project -Leaf).ToLower())") {
                 $options["p"] = "Version=$((Get-Variable "GitVersion.$((Split-Path $project -Leaf).ToLower())" -ValueOnly).InformationalVersion)"
