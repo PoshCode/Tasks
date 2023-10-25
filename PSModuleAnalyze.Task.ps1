@@ -1,7 +1,7 @@
 Add-BuildTask PSModuleAnalyze PSModuleBuild, {
     $ScriptAnalyzer = @{
         IncludeDefaultRules = $true
-        Path                = Get-ChildItem $PSModuleOutputPath -Filter "$PSModuleName.psm1" -Recurse
+        Path                = @(Get-ChildItem $PSModuleOutputPath -Filter "$PSModuleName.psm1" -Recurse)[-1]
         Settings            = if (Test-Path "$BuildRoot\ScriptAnalyzerSettings.psd1") {
             "$BuildRoot\ScriptAnalyzerSettings.psd1"
         } else {
