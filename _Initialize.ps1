@@ -118,7 +118,7 @@ Write-Information "  BranchName: $script:BranchName"
 
 #region DotNet task variables. Find the DotNet projects once.
 if (([bool]$DotNet = $dotnetProjects -or $DotNetPublishRoot)) {
-    Write-Information "Initializing DotNet build variables"
+    Write-Information "Initializing DotNet build variables (dotnetProjects: $dotnetProjects, DotNetPublishRoot: $DotNetPublishRoot)"
     # The DotNetPublishRoot is the "publish" folder within the OutputRoot (used for dotnet publish output)
     $script:DotNetPublishRoot ??= Join-Path $script:OutputRoot publish
 
@@ -152,6 +152,11 @@ if (([bool]$DotNet = $dotnetProjects -or $DotNetPublishRoot)) {
         }
     )  | Convert-Path
     Write-Information "  DotNetTestProjects: $($script:dotnetTestProjects -join ", ")"
+
+    # In order to publish nuget packages, you need to set these before running the build
+    $script:NuGetPublishKey ??= $Env:NUGET_API_KEY
+    $script:NuGetPublishUri ??= $Env:NUGET_API_URI ?? "https://api.nuget.org/v3/index.json"
+    Write-Information "  NuGetPublishUri: $NuGetPublishUri"
 
     $script:dotnetOptions ??= @{}
 }
@@ -232,9 +237,9 @@ if ($PSModuleName) {
     Write-Information "  PSRepository: $PSRepository"
 
     # In order to publish modules, you may need to set these before running the build
-    $script:PSModulePublishUri ??= $Env:PSMODULE_PUBLISH_URI
+    $script:PSModulePublishUri ??= $Env:PSMODULE_PUBLISH_URI ?? "https://www.powershellgallery.com/api/v2"
     $script:PSModulePublishKey ??= $Env:PSMODULE_PUBLISH_KEY
-    Write-Information "  PowerShellModulePublishUri: $PowerShellModulePublishUri"
+    Write-Information "  PSModulePublishUri: $PSModulePublishUri"
 }
 #endregion
 
@@ -253,15 +258,15 @@ if ($dotnetProjects) {
 if ($PSModuleName -and $dotnetProjects -or $DotNetPublishRoot) {
     Add-BuildTask Test Build, DotNetTest, PSModuleAnalyze, PSModuleTest
     Add-BuildTask Build DotNetRestore, PSModuleRestore, GitVersion, DotNetBuild, DotNetPublish, PSModuleBuild, PSModuleBinaryTrim #, PSModuleBuildHelp
-    Add-BuildTask Publish TagSource, DotNetPublish, PSModulePublish
+    Add-BuildTask Publish TagSource, DotNetPack, PSModulePublish
 } elseif ($PSModuleName) {
     Add-BuildTask Test Build, PSModuleAnalyze, PSModuleTest
     Add-BuildTask Build PSModuleRestore, GitVersion, PSModuleBuild #, PSModuleBuildHelp
     Add-BuildTask Publish Test, TagSource, PSModulePublish
 } elseif ($dotnetProjects) {
     Add-BuildTask Test Build, DotNetTest
-    Add-BuildTask Build DotNetRestore, GitVersion, DotNetBuild
-    Add-BuildTask Publish Test, TagSource, DotNetPublish
+    Add-BuildTask Build DotNetRestore, GitVersion, DotNetBuild, DotNetPublish
+    Add-BuildTask Publish Test, TagSource, DotNetPack
 }
 
 
