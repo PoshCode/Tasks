@@ -167,9 +167,9 @@ if (([bool]$DotNet = $dotnetProjects -or $DotNetPublishRoot)) {
 if ($PSModuleName) {
     Write-Information "Initializing PSModule build variables"
     # We're looking for either a build.psd1 or the module manifest:
-    #   .\src\ModuleName.psd1
-    #   .\source\ModuleName.psd1
-    #   .\ModuleName\ModuleName.psd1
+    #   ./src/ModuleName.psd1
+    #   ./source/ModuleName.psd1
+    #   ./ModuleName/ModuleName.psd1
     if ($PSModuleName -eq "*" -or !$PSModuleSourceRoot -or !$PSModuleName  -or !(Test-Path $PSModuleSourceRoot -PathType Container)) {
         Write-Information "  Looking for PSModule source"
         # look for a build.psd1 for ModuleBuilder. It should be in the root, but it might be in a subfolder

@@ -14,20 +14,20 @@
 #>
 
 Add-BuildTask PSModuleTest @{
-    If      = Get-ChildItem ($PSModuleTestPath ?? "$BuildRoot\Tests") -Recurse -File -Filter *.tests.ps1
+    If      = Get-ChildItem ($PSModuleTestPath ?? "$BuildRoot${/}Tests") -Recurse -File -Filter *.tests.ps1
     Inputs  = {
         Get-ChildItem $PSModuleOutputPath -Recurse -File
-        Get-ChildItem ($PSModuleTestPath ?? "$BuildRoot\Tests") -Recurse -File -Filter *.tests.ps1
+        Get-ChildItem ($PSModuleTestPath ?? "$BuildRoot${/}Tests") -Recurse -File -Filter *.tests.ps1
     }
     Outputs = {
         if ($Clean) {
             $BuildRoot # guaranteed to be old
         } else {
-            "$OutputRoot\TestResults.xml"
+            "$OutputRoot${/}TestResults.xml"
         }
     }
     Jobs    = "PSModuleImport", {
-            $PSModuleTestPath ??= "$BuildRoot\Tests"
+            $PSModuleTestPath ??= "$BuildRoot${/}Tests"
             # The output path, by convention: TestResults.xml in your output folder
             $TestResultOutputPath ??= Join-Path $OutputRoot "TestResult.xml"
 
@@ -38,8 +38,8 @@ Add-BuildTask PSModuleTest @{
         # 1. The $OutputRoot directory must be first on Env:PSMODULEPATH
         # 2. The $PSModuleName directory must be in $OutputRoot directory
         # 3. The $PSModuleName.psd1 file must be in the $PSModuleName directory
-        if (-not (Test-Path "$OutputRoot\$PSModuleName\$PSModuleName.psd1")) {
-            throw "Cannot test module if it's not in $OutputRoot\$PSModuleName\$PSModuleName.psd1"
+        if (-not (Test-Path "$OutputRoot${/}$PSModuleName${/}$PSModuleName.psd1")) {
+            throw "Cannot test module if it's not in $OutputRoot${/}$PSModuleName${/}$PSModuleName.psd1"
         } else {
             $TestModulePath = @($OutputRoot) + @($Env:PSMODULEPATH -split [IO.Path]::PathSeparator -ne $OutputRoot) -join [IO.Path]::PathSeparator
             $Env:PSMODULEPATH, $OldModulePath = $TestModulePath, $Env:PSMODULEPATH
@@ -59,13 +59,13 @@ Add-BuildTask PSModuleTest @{
 
                 if ($Script:RequiredCodeCoverage -gt 0.00) {
                     $CodeCoveragePath = $PSModuleManifestPath
-                    $CodeCoverageOutputPath = "$OutputRoot\coverage.xml"
+                    $CodeCoverageOutputPath = "$OutputRoot${/}coverage.xml"
                     $CodeCoveragePercentTarget = $RequiredCodeCoverage
                 }
 
                 # The version of Pester to use (by default, reads RequiredModules and supports 4.x or 5.x)
                 if (!$PesterVersion) {
-                    $PesterVersion = Get-Item $Script:BuildRoot\RequiredModules.psd1, $PSScriptRoot\RequiredModules.psd1 -ErrorAction SilentlyContinue |
+                    $PesterVersion = Get-Item $Script:BuildRoot${/}RequiredModules.psd1, $PSScriptRoot${/}RequiredModules.psd1 -ErrorAction SilentlyContinue |
                         Select-Object -First 1 |
                         Import-Metadata |
                         ForEach-Object { $_.Pester -Split "[[,]" } |
