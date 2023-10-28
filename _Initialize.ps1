@@ -258,7 +258,7 @@ if ($dotnetProjects) {
 ## The first task defined is the default task. Default to build and test.
 if ($PSModuleName -and $dotnetProjects -or $DotNetPublishRoot) {
     Add-BuildTask Test Build, DotNetTest, PSModuleAnalyze, PSModuleTest
-    Add-BuildTask Build DotNetRestore, PSModuleRestore, GitVersion, DotNetBuild, DotNetPublish, PSModuleBuild, PSModuleBinaryTrim #, PSModuleBuildHelp
+    Add-BuildTask Build DotNetRestore, PSModuleRestore, GitVersion, DotNetBuild, DotNetPublish, PSModuleBuild #, PSModuleBuildHelp
     Add-BuildTask Publish TagSource, DotNetPack, DotNetPush, PSModulePublish
 } elseif ($PSModuleName) {
     Add-BuildTask Test Build, PSModuleAnalyze, PSModuleTest
