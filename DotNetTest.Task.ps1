@@ -2,8 +2,8 @@ Add-BuildTask DotNetTest @{
     # This task should be skipped if there are no C# projects to build
     If      = $dotnetTestProjects
     Inputs  = {
-        Get-ChildItem $dotnetProjects -Recurse -File -Filter *.cs |
-            Where-Object FullName -NotMatch "[\\/]obj[\\/]"
+        Get-ChildItem (Split-Path $dotnetProjects) -Recurse -File -Filter *.cs
+        | Where-Object FullName -NotMatch "[\\/]obj[\\/]"
     }
     Outputs = {
         (Get-ChildItem $TestResultsRoot -Filter *.trx -Recurse -ErrorAction Ignore) ?? $TestResultsRoot

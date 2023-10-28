@@ -122,17 +122,18 @@ if (([bool]$DotNet = $dotnetProjects -or $DotNetPublishRoot)) {
     # The DotNetPublishRoot is the "publish" folder within the OutputRoot (used for dotnet publish output)
     $script:DotNetPublishRoot ??= Join-Path $script:OutputRoot publish
 
-    # The projects are expected to each be in their own folder
-    # Dotnet allows us to pass it the _folder_ that we want to build/test
-    # So our $buildProjects are the names of the folders that contain the projects
+    # Our $buildProjects are either:
+    # - Just the name
+    # - The full path to a csproj file
+    # We're going to normalize to the full csproj path
     $script:dotnetProjects = @(
         if (!$dotnetProjects) {
             Write-Information "  No `$DotNetProjects specified"
-            Get-ChildItem -Path $BuildRoot -Include *.*proj -Recurse | Split-Path
+            Get-ChildItem -Path $BuildRoot -Include *.*proj -Recurse
         } elseif (![IO.Path]::IsPathRooted(@($dotnetProjects)[0])) {
             Write-Information "  Relative `$DotNetProjects specified"
             Get-ChildItem -Path $BuildRoot -Include *.*proj -Recurse |
-                Where-Object { $dotnetProjects -contains $_.BaseName } | Split-Path
+                Where-Object { $dotnetProjects -contains $_.BaseName }
         } else {
             $dotnetProjects
         }
@@ -142,11 +143,11 @@ if (([bool]$DotNet = $dotnetProjects -or $DotNetPublishRoot)) {
     $script:dotnetTestProjects = @(
         if (!$dotnetTestProjects) {
             Write-Information "  No `$DotNetTestProjects specified"
-            Get-ChildItem -Path $BuildRoot -Include *Test.*proj -Recurse | Split-Path
+            Get-ChildItem -Path $BuildRoot -Include *Test.*proj -Recurse
         } elseif (![IO.Path]::IsPathRooted(@($dotnetTestProjects)[0])) {
             Write-Information "  Relative `$DotNetTestProjects specified"
-            Get-ChildItem -Path $BuildRoot -Include *Test.*proj -Recurse |
-                Where-Object { $dotnetTestProjects -contains $_.BaseName } | Split-Path
+            Get-ChildItem -Path $BuildRoot -Include *.*proj -Recurse |
+                Where-Object { $dotnetTestProjects -contains $_.BaseName }
         } else {
             $dotnetTestProjects
         }
@@ -246,7 +247,7 @@ if ($PSModuleName) {
 # PackageNames allows you to build and tag multiple packages from the same repository
 $script:PackageNames = $script:PackageNames ?? @(
 if ($dotnetProjects) {
-    (Split-Path $dotnetProjects -Leaf).ToLower()
+    (Split-Path $dotnetProjects -LeafBase).ToLower()
 } elseif ($PSModuleName) {
     @($PSModuleName)
 } else {
@@ -258,7 +259,7 @@ if ($dotnetProjects) {
 if ($PSModuleName -and $dotnetProjects -or $DotNetPublishRoot) {
     Add-BuildTask Test Build, DotNetTest, PSModuleAnalyze, PSModuleTest
     Add-BuildTask Build DotNetRestore, PSModuleRestore, GitVersion, DotNetBuild, DotNetPublish, PSModuleBuild, PSModuleBinaryTrim #, PSModuleBuildHelp
-    Add-BuildTask Publish TagSource, DotNetPack, PSModulePublish
+    Add-BuildTask Publish TagSource, DotNetPack, DotNetPush, PSModulePublish
 } elseif ($PSModuleName) {
     Add-BuildTask Test Build, PSModuleAnalyze, PSModuleTest
     Add-BuildTask Build PSModuleRestore, GitVersion, PSModuleBuild #, PSModuleBuildHelp
@@ -266,7 +267,7 @@ if ($PSModuleName -and $dotnetProjects -or $DotNetPublishRoot) {
 } elseif ($dotnetProjects) {
     Add-BuildTask Test Build, DotNetTest
     Add-BuildTask Build DotNetRestore, GitVersion, DotNetBuild, DotNetPublish
-    Add-BuildTask Publish Test, TagSource, DotNetPack
+    Add-BuildTask Publish Test, TagSource, DotNetPack, DotNetPush
 }
 
 

@@ -3,13 +3,13 @@ Add-BuildTask DotNetBuild @{
     If      = $dotnetProjects
     Inputs  = {
         # Exclude generated source files in /obj/ folders
-        Get-ChildItem $dotnetProjects -Recurse -File -Filter *.cs |
+        Get-ChildItem (Split-Path $dotnetProjects) -Recurse -File -Filter *.cs |
             Where-Object FullName -NotMatch "[\\/]obj[\\/]"
     }
     Outputs = {
         foreach ($project in $dotnetProjects) {
-            $BaseName = (Get-Item $project -Filter *.csproj).BaseName
-            (Get-ChildItem $project/bin -Filter "$BaseName.dll" -Recurse -ErrorAction Ignore) ?? $BuildRoot
+            $BaseName = Split-Path $project -LeafBase
+            (Get-ChildItem (Join-Path (Split-Path $project) bin) -Filter "$BaseName.dll" -Recurse -ErrorAction Ignore) ?? $BuildRoot
         }
     }
     Jobs    = "DotNetRestore", "GitVersion", {
@@ -21,8 +21,8 @@ Add-BuildTask DotNetBuild @{
         }
 
         foreach ($project in $dotnetProjects) {
-            if (Test-Path "Variable:GitVersion.$((Split-Path $project -Leaf).ToLower())") {
-                $options["p"] = "Version=$((Get-Variable "GitVersion.$((Split-Path $project -Leaf).ToLower())" -ValueOnly).InformationalVersion)"
+            if (Test-Path "Variable:GitVersion.$((Split-Path $project -LeafBase).ToLower())") {
+                $options["p"] = "Version=$((Get-Variable "GitVersion.$((Split-Path $project -LeafBase).ToLower())" -ValueOnly).InformationalVersion)"
             }
 
             Write-Build Gray "dotnet build $project --configuration $configuration -p $($options["p"])"

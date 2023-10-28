@@ -2,10 +2,10 @@ Add-BuildTask DotNetRestore @{
     # This task should be skipped if there are no C# projects to build
     If      = $dotnetProjects
     Inputs  = {
-        Get-ChildItem $dotnetProjects -Recurse -File -Filter *.*proj
+        Get-Item $dotnetProjects
     }
     Outputs = {
-        Join-Path $dotnetProjects obj project.assets.json
+        $dotnetProjects.ForEach{ Join-Path (Split-Path $_) obj project.assets.json }
     }
     Jobs    = {
         $local:options = @{} + $script:dotnetOptions

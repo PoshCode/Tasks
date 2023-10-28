@@ -3,12 +3,12 @@ Add-BuildTask DotNetPublish @{
     If      = $dotnetProjects
     Inputs  = {
         # Exclude generated source files in /obj/ folders
-        Get-ChildItem $dotnetProjects -Recurse -File -Filter *.cs |
+        Get-ChildItem (Split-Path $dotnetProjects) -Recurse -File -Filter *.cs |
             Where-Object FullName -NotMatch "[\\/]obj[\\/]"
     }
     Outputs = {
         foreach ($project in $dotnetProjects) {
-            $Name = Split-Path $project -Leaf
+            $Name = Split-Path $project -LeafBase
             $OutputFolder = @($dotnetProjects).Count -gt 1 ? "$DotNetPublishRoot${/}$Name" : $DotNetPublishRoot
             $Expected = Join-Path $OutputFolder -ChildPath "$Name.dll"
             Write-Host "Expected Output: $Expected"
@@ -26,16 +26,16 @@ Add-BuildTask DotNetPublish @{
         }
 
         foreach ($project in $dotnetProjects) {
-            Write-Host "Publishing $project"
-            $Name = Split-Path $project -Leaf
-            if (Test-Path "Variable:GitVersion.$((Split-Path $project -Leaf).ToLower())") {
-                $options["p"] = "Version=$((Get-Variable "GitVersion.$((Split-Path $project -Leaf).ToLower())" -ValueOnly).InformationalVersion)"
+            $Name = Split-Path $project -LeafBase
+            Write-Host "Publishing $Name"
+            if (Test-Path "Variable:GitVersion.$($Name.ToLower())") {
+                $options["p"] = "Version=$((Get-Variable "GitVersion.$($Name.ToLower())" -ValueOnly).InformationalVersion)"
             }
 
-            Set-Location $project
+            Set-Location (Split-Path $project)
             $OutputFolder = @($dotnetProjects).Count -gt 1 ? "$DotNetPublishRoot${/}$Name" : $DotNetPublishRoot
-            Write-Build Gray "dotnet publish --output $OutputFolder --no-build --configuration $configuration -p $($options["p"])"
-            dotnet publish --output "$OutputFolder" --no-build --configuration $configuration
+            Write-Build Gray "dotnet publish $project --output $OutputFolder --no-build --configuration $configuration -p $($options["p"])"
+            dotnet publish $project --output "$OutputFolder" --no-build --configuration $configuration
         }
     }
 }
