@@ -5,8 +5,10 @@ Add-BuildTask PSModuleBuild @{
     Jobs    = "PSModuleRestore", {
         $InformationPreference = "Continue"
 
-        Write-Information "Build-Module -SourcePath $PSModuleSourcePath -Destination $PSModuleOutputPath -SemVer $($script:GitVersion.InformationalVersion)"
-        $Module = Build-Module -SourcePath $PSModuleSourcePath -Destination $PSModuleOutputPath -SemVer $script:GitVersion.InformationalVersion -Verbose:$Verbose -Debug:$Debug -Passthru
+        $SemVer = (Get-Variable "GitVersion.$PSModuleName" -ValueOnly).InformationalVersion
+
+        Write-Information "Build-Module -SourcePath $PSModuleSourcePath -Destination $PSModuleOutputPath -SemVer $SemVer"
+        $Module = Build-Module -SourcePath $PSModuleSourcePath -Destination $PSModuleOutputPath -SemVer $SemVer -Verbose:$Verbose -Debug:$Debug -Passthru
 
         if ($DotNetPublishRoot -and (Test-Path $DotNetPublishRoot)) {
             $Libraries = New-Item (Join-Path $Module.ModuleBase lib) -Type Directory -Force | Convert-Path

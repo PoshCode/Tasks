@@ -246,14 +246,18 @@ if ($PSModuleName) {
 
 # PackageNames allows you to build and tag multiple packages from the same repository
 $script:PackageNames = $script:PackageNames ?? @(
-if ($dotnetProjects) {
-    (Split-Path $dotnetProjects -LeafBase).ToLower()
-} elseif ($PSModuleName) {
-    @($PSModuleName)
-} else {
-    @("PSModule")
-})
-
+    if ($dotnetProjects) {
+        (Split-Path $dotnetProjects -LeafBase).ToLower()
+    }
+) + @(
+    if ($PSModuleName) {
+        @($PSModuleName).ToLower()
+    }
+) + @(
+    if (!$dotnetProjects -and !$PSModuleName){
+        "psmodule"
+    }
+) | Select-Object -Unique
 
 ## The first task defined is the default task. Default to build and test.
 if ($PSModuleName -and $dotnetProjects -or $DotNetPublishRoot) {
@@ -269,7 +273,6 @@ if ($PSModuleName -and $dotnetProjects -or $DotNetPublishRoot) {
     Add-BuildTask Build DotNetRestore, GitVersion, DotNetBuild, DotNetPublish
     Add-BuildTask Publish Test, TagSource, DotNetPack, DotNetPush
 }
-
 
 # Finally, import all the Task.ps1 files in this folder
 if (!$NoTasks) {

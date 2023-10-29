@@ -23,32 +23,9 @@ Add-BuildTask GitVersion @{
         }
     }
     Jobs    = {
-        <# MonoRepo Madness
-        # If this is a PR build, fetch the "description" which will go into the commit later
-        # GET https://dev.azure.com/{organization}/{project}/_apis/sourceProviders/{providerName}/pullrequests/{pullRequestId}?repositoryId={repositoryId}&serviceEndpointId={serviceEndpointId}&api-version=7.0
-
-        $commitMessage = if ($Env:SYSTEM_PULLREQUEST_PULLREQUESTID -and $Env:SYSTEM_ACCESSTOKEN -and $Env:SYSTEM_COLLECTIONURI) {
-            $BaseUri = "$($Env:SYSTEM_COLLECTIONURI)$($Env:SYSTEM_TEAMPROJECTID)/_apis/"
-            $ApiVersion = "api-version=7.0"
-            $PullRequest = Invoke-RestMethod "$($BaseUri)sourceProviders/git/pullrequests/${Env:SYSTEM_PULLREQUEST_PULLREQUESTID}?$($ApiVersion)" -Headers @{
-                Authorization = "Bearer $Env:SYSTEM_ACCESSTOKEN"
-            }
-            $PullRequest.title + "`n`n" + $PullRequest.description
-        } else {
-            # %B is for the raw "Body" of the commit message. See https://git-scm.com/docs/git-show#_pretty_formats
-            git log -1 --format="%B"
-        }
-
-        # In a monorepo, we need to ignore commits that don't mention a specific package
-        if ($PackageNames) {
-            Write-Host "GitVersion calculating for monorepo."
-            $SkipMessage = ".*"
-        } else {
-            Write-Host "GitVersion calculating for single project repo."
-            $SkipMessage = "\s*(skip|none)"
-        }
-        #>
-        $script:GitVersionTags = foreach ($Name in $PackageNames) {
+        $script:GitVersionTags = @()
+        $script:MultiGitVersion = @{}
+        foreach ($Name in $PackageNames) {
 
             if ($PackageNames.Count -gt 1) {
                 $GitVersionMessagePrefix = ($GitVersionMessagePrefix, $Name) -join "-"
@@ -65,36 +42,39 @@ Add-BuildTask GitVersion @{
                 Convert-Path (Join-Path $PSScriptRoot GitVersion.yml)
             }
 
-            $VersionFile = Join-Path $TempRoot -ChildPath "$GitVersionTagPrefix$GitSha.json"
+            Write-Verbose "Using GitVersion config $GitVersionYaml" -Verbose
 
+            $LogFile = Join-Path $TempRoot -ChildPath "$GitVersionTagPrefix$GitSha.log"
+
+            $VersionFile = Join-Path $TempRoot -ChildPath "$GitVersionTagPrefix$GitSha.json"
             if (Test-Path $VersionFile) {
                 Remove-Item $VersionFile
             }
 
-            Write-Host dotnet gitversion -config $GitVersionYaml -output file -outputfile $VersionFile
             # We can't splat because it's 5 copies of the same parameter, so, use line-wrapping escapes:
-            # Also, the no-bump-message has to stay at .* or else every commit to master will increment all components
-            dotnet gitversion -config $GitVersionYaml -output file -outputfile $VersionFile `
+            # Also, the no-bump-message has to stay at .* or else every commit to main will increment all components
+            # Write-Host dotnet gitversion -config $GitVersionYaml -output file -outputfile $VersionFile -verbosity verbose
+            <# -output file -outputfile $VersionFile #>
+            dotnet gitversion -verbosity diagnostic -config $GitVersionYaml `
                 -overrideconfig tag-prefix="$($GitVersionTagPrefix)" `
                 -overrideconfig major-version-bump-message="$($GitVersionMessagePrefix):\s*(breaking|major)" `
                 -overrideconfig minor-version-bump-message="$($GitVersionMessagePrefix):\s*(feature|minor)" `
                 -overrideconfig patch-version-bump-message="$($GitVersionMessagePrefix):\s*(fix|patch)" `
-                -overrideconfig no-bump-message="$($GitVersionMessagePrefix):\s*(skip|none)"
+                -overrideconfig no-bump-message="$($GitVersionMessagePrefix):\s*(skip|none)" > $VersionFile 2> $LogFile
 
-            try {
-                $script:GitVersion = Get-Content $VersionFile | ConvertFrom-Json -ErrorAction Stop
-                Set-Variable "GitVersion.$Name" $GitVersion -Scope Script
-                if (@($PackageNames).Count -eq 1) {
-                    Set-Content "Env:GITVERSION" $GitVersion.MajorMinorPatch
-                }
-
-            } catch {
-                Write-Warning "dotnet gitversion -config $GitVersionYaml -outputfile $VersionFile"
-                Write-Warning "GitVersionTagPrefix: $($GitVersionTagPrefix)"
-                Write-Warning "GitVersionMessagePrefix: $($GitVersionMessagePrefix)"
-                Write-Host $VersionFile
-                throw $_
+            if (Test-Path $LogFile) {
+                Write-Error ((Get-Content $LogFile) -join "`n")
             }
+
+            if (!(Test-Path $VersionFile)) {
+                throw "GitVersion failed to produce a version file or a log file"
+            } else {
+                Get-Content $VersionFile | Out-Host
+                $GitVersion = Get-Content $VersionFile | ConvertFrom-Json
+            }
+
+            Set-Variable "GitVersion.$Name" $GitVersion -Scope Script
+            $MultiGitVersion.$Name = $GitVersion
 
             # Output for Azure DevOps
             if ($ENV:SYSTEM_COLLECTIONURI) {
@@ -113,6 +93,8 @@ Add-BuildTask GitVersion @{
             # Output the expected tag
             $GitVersionTagPrefix + $GitVersion.SemVer
         }
+
+        $MultiGitVersion | ConvertTo-Json | Set-Content $VersionFile
 
         # Output for Azure DevOps
         if ($ENV:SYSTEM_COLLECTIONURI) {
