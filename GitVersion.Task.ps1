@@ -45,7 +45,9 @@ Add-BuildTask GitVersion @{
             Write-Verbose "Using GitVersion config $GitVersionYaml" -Verbose
 
             $LogFile = Join-Path $TempRoot -ChildPath "$GitVersionTagPrefix$GitSha.log"
-
+            if (Test-Path $LogFile) {
+                Remove-Item $LogFile
+            }
             $VersionFile = Join-Path $TempRoot -ChildPath "$GitVersionTagPrefix$GitSha.json"
             if (Test-Path $VersionFile) {
                 Remove-Item $VersionFile
@@ -63,7 +65,7 @@ Add-BuildTask GitVersion @{
                 -overrideconfig no-bump-message="$($GitVersionMessagePrefix):\s*(skip|none)" > $VersionFile 2> $LogFile
 
             if (Test-Path $LogFile) {
-                Write-Error ((Get-Content $LogFile) -join "`n")
+                Write-Host $PSStyle.Formatting.Error ((Get-Content $LogFile) -join "`n") $PSStyle.Reset
             }
 
             if (!(Test-Path $VersionFile)) {

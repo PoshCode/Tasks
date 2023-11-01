@@ -10,9 +10,9 @@ param(
     [switch]$NoTasks
 )
 
-$InformationPreference = "Continue"
 $ErrorView = 'DetailedView'
 $ErrorActionPreference = 'Stop'
+$InformationPreference = "Continue"
 
 if (!(Get-Variable Verbose -Scope Script -ErrorAction Ignore)) {
     $script:Verbose = $false
@@ -276,11 +276,11 @@ if ($PSModuleName -and $dotnetProjects -or $DotNetPublishRoot) {
 
 # Finally, import all the Task.ps1 files in this folder
 if (!$NoTasks) {
-    Write-Information "Import Shared Tasks"
+    Write-Debug "Import Shared Tasks"
     foreach ($taskfile in Get-ChildItem -Path $PSScriptRoot -Filter *.Task.ps1) {
         if (!$DotNet -and $taskfile.Name -match "DotNet") { continue }
         if (!$PSModuleName -and $taskfile.Name -match "PSModule") { continue }
-        Write-Information "  $($taskfile.FullName)"
+        Write-Debug "  $($taskfile.FullName)"
         . $taskfile.FullName
     }
 }
