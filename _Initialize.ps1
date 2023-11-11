@@ -261,17 +261,20 @@ $script:PackageNames = $script:PackageNames ?? @(
 
 ## The first task defined is the default task. Default to build and test.
 if ($PSModuleName -and $dotnetProjects -or $DotNetPublishRoot) {
-    Add-BuildTask Test Build, DotNetTest, PSModuleAnalyze, PSModuleTest
     Add-BuildTask Build DotNetRestore, PSModuleRestore, GitVersion, DotNetBuild, DotNetPublish, PSModuleBuild #, PSModuleBuildHelp
-    Add-BuildTask Publish TagSource, DotNetPack, DotNetPush, PSModulePublish
+    Add-BuildTask Test Build, DotNetTest, PSModuleAnalyze, PSModuleTest
+    Add-BuildTask Pack Test, TagSource, DotNetPack
+    Add-BuildTask Publish Pack, DotNetPush, PSModulePublish
 } elseif ($PSModuleName) {
-    Add-BuildTask Test Build, PSModuleAnalyze, PSModuleTest
     Add-BuildTask Build PSModuleRestore, GitVersion, PSModuleBuild #, PSModuleBuildHelp
-    Add-BuildTask Publish Test, TagSource, PSModulePublish
+    Add-BuildTask Test Build, PSModuleAnalyze, PSModuleTest
+    Add-BuildTask Pack Test, TagSource
+    Add-BuildTask Publish Pack, PSModulePublish
 } elseif ($dotnetProjects) {
-    Add-BuildTask Test Build, DotNetTest
     Add-BuildTask Build DotNetRestore, GitVersion, DotNetBuild, DotNetPublish
-    Add-BuildTask Publish Test, TagSource, DotNetPack, DotNetPush
+    Add-BuildTask Test Build, DotNetTest
+    Add-BuildTask Pack Test, TagSource
+    Add-BuildTask Publish Pack, DotNetPack, DotNetPush
 }
 
 # Finally, import all the Task.ps1 files in this folder
