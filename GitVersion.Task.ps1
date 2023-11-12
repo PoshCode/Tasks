@@ -75,9 +75,13 @@ Add-BuildTask GitVersion @{
                     if (!$VersionContent) {
                         throw "GitVersion produced an empty version file"
                     }
-                    $GitVersion = $VersionContent | ConvertFrom-Json |
-                        Add-Member ScriptProperty Tag -Value { $GitVersionTagPrefix + $this.SemVer } -PassThru
-                    $GitVersion | Format-List | Out-Host
+                    try {
+                        $GitVersion = $VersionContent | ConvertFrom-Json |
+                            Add-Member ScriptProperty Tag -Value { $GitVersionTagPrefix + $this.SemVer } -PassThru
+                        $GitVersion | Format-List | Out-Host
+                    } catch {
+                        throw "GitVersion produced an invalid version file: $VersionContent"
+                    }
                 }
 
                 Set-Variable "GitVersion.$Name" $GitVersion -Scope Script
