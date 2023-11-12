@@ -114,6 +114,8 @@ if (!$script:BranchName -and (Get-Command git -CommandType Application -ErrorAct
     $script:BranchName = (git branch --show-current) -replace ".*/"
 }
 Write-Information "  BranchName: $script:BranchName"
+
+$script:GitUrl = $script:GitUrl ?? $Env:EARTHLY_GIT_ORIGIN_URL ?? $Env:BUILD_REPOSITORY_URI ?? (git remote get-url origin)
 #endregion
 
 #region DotNet task variables. Find the DotNet projects once.
