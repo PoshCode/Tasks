@@ -102,6 +102,8 @@ $Script:TempRoot = $script:TempRoot ??
 New-Item -Type Directory -Path $TempRoot -Force | Out-Null
 Write-Information "  TempRoot: $TempRoot"
 
+$Env:BUILD_BUILDID = $Env:BUILD_BUILDID ?? $Env:GITHUB_RUN_NUMBER
+
 # Git variables that we could probably use:
 $Script:GitSha = $script:GitSha ?? $Env:EARTHLY_BUILD_SHA ?? $Env:GITHUB_SHA ?? $Env:BUILD_SOURCEVERSION
 if (!$Script:GitSha) {
@@ -249,15 +251,15 @@ if ($PSModuleName) {
 # PackageNames allows you to build and tag multiple packages from the same repository
 $script:PackageNames = $script:PackageNames ?? @(
     if ($dotnetProjects) {
-        (Split-Path $dotnetProjects -LeafBase).ToLower()
+        Split-Path $dotnetProjects -LeafBase
     }
 ) + @(
     if ($PSModuleName) {
-        @($PSModuleName).ToLower()
+        @($PSModuleName)
     }
 ) + @(
     if (!$dotnetProjects -and !$PSModuleName){
-        "psmodule"
+        "module"
     }
 ) | Select-Object -Unique
 

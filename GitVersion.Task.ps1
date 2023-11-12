@@ -42,7 +42,7 @@ Add-BuildTask GitVersion @{
                     Convert-Path (Join-Path $PSScriptRoot GitVersion.yml)
                 }
 
-                Write-Verbose "Using GitVersion config $GitVersionYaml" -Verbose
+                Write-Verbose "For ${Name}: Using GitVersion config $GitVersionYaml" -Verbose
 
                 $LogFile = Join-Path $TempRoot -ChildPath "$GitVersionTagPrefix$GitSha.log"
                 if (Test-Path $LogFile) {
@@ -77,15 +77,13 @@ Add-BuildTask GitVersion @{
                             throw "GitVersion produced an empty version file"
                         }
                         try {
-                            $GitVersion = $VersionContent | ConvertFrom-Json |
-                                Add-Member ScriptProperty Tag -Value { $GitVersionTagPrefix + $this.SemVer } -PassThru
-                            $GitVersion | Format-List | Out-Host
+                            $GitVersion = $VersionContent | ConvertFrom-Json
                         } catch {
                             throw "GitVersion produced an invalid version file: $VersionContent"
                         }
                     }
                 } catch {
-                    Write-Warning "GitVersion failed, trying with URL $GitUrl"
+                    Write-Warning "GitVersion failed $($_.Exception.Message) trying with URL $GitUrl"
                     dotnet gitversion -url $GitUrl -b $BranchName -c $GitSha -config $GitVersionYaml `
                         -overrideconfig tag-prefix="$($GitVersionTagPrefix)" `
                         -overrideconfig major-version-bump-message="$($GitVersionMessagePrefix):\s*(breaking|major)" `
@@ -106,15 +104,15 @@ Add-BuildTask GitVersion @{
                             throw "GitVersion produced an empty version file"
                         }
                         try {
-                            $GitVersion = $VersionContent | ConvertFrom-Json |
-                                Add-Member ScriptProperty Tag -Value { $GitVersionTagPrefix + $this.SemVer } -PassThru
-                            $GitVersion | Format-List | Out-Host
+                            $GitVersion = $VersionContent | ConvertFrom-Json
                         } catch {
                             throw "GitVersion produced an invalid version file: $VersionContent"
                         }
                     }
                 }
 
+                $GitVersion | Add-Member ScriptProperty Tag -Value { $GitVersionTagPrefix + $this.SemVer } -PassThru | Format-List | Out-Host
+                Write-Host Set-Variable "GitVersion.$Name" $GitVersion.InformationalVersion
                 Set-Variable "GitVersion.$Name" $GitVersion -Scope Script
                 $MultiGitVersion.$Name = $GitVersion
 

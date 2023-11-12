@@ -5,7 +5,7 @@ Add-BuildTask PSModuleBuild @{
     Jobs    = "PSModuleRestore", {
         $InformationPreference = "Continue"
 
-        $SemVer = (Get-Variable "GitVersion.$($PSModuleName.ToLower())" -ValueOnly).InformationalVersion
+        $SemVer = (Get-Variable "GitVersion.$PSModuleName" -ValueOnly).InformationalVersion
 
         Write-Information "Build-Module -SourcePath $PSModuleSourcePath -Destination $PSModuleOutputPath -SemVer $SemVer"
         $Module = Build-Module -SourcePath $PSModuleSourcePath -Destination $PSModuleOutputPath -SemVer $SemVer -Verbose:$Verbose -Debug:$Debug -Passthru

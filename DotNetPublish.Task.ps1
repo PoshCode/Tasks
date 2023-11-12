@@ -28,8 +28,8 @@ Add-BuildTask DotNetPublish @{
         foreach ($project in $dotnetProjects) {
             $Name = Split-Path $project -LeafBase
             Write-Host "Publishing $Name"
-            if (Test-Path "Variable:GitVersion.$($Name.ToLower())") {
-                $options["p"] = "Version=$((Get-Variable "GitVersion.$($Name.ToLower())" -ValueOnly).InformationalVersion)"
+            if (Test-Path "Variable:GitVersion.$Name") {
+                $options["p"] = "Version=$((Get-Variable "GitVersion.$Name" -ValueOnly).InformationalVersion)"
             }
 
             Set-Location (Split-Path $project)

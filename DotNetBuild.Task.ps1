@@ -23,7 +23,7 @@ Add-BuildTask DotNetBuild @{
         foreach ($project in $dotnetProjects) {
             $Name = (Split-Path $project -LeafBase).ToLower()
             if (Test-Path "Variable:GitVersion.$Name") {
-                $options["p"] = "Version=$((Get-Variable "GitVersion.$($Name.ToLower())" -ValueOnly).InformationalVersion)"
+                $options["p"] = "Version=$((Get-Variable "GitVersion.$Name" -ValueOnly).InformationalVersion)"
             }
 
             Write-Build Gray "dotnet build $project --configuration $configuration -p $($options["p"])"

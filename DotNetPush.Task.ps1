@@ -8,8 +8,8 @@ Add-BuildTask DotNetPush @{
 
         foreach ($project in $dotnetProjects) {
             $Name = Split-Path $project -LeafBase
-            if (Test-Path "Variable:GitVersion.$($Name.ToLower())") {
-                $options["p"] = "Version=$((Get-Variable "GitVersion.$($Name.ToLower())" -ValueOnly).InformationalVersion)"
+            if (Test-Path "Variable:GitVersion.$Name") {
+                $options["p"] = "Version=$((Get-Variable "GitVersion.$Name" -ValueOnly).InformationalVersion)"
             }
 
             Write-Host "Publishing $name"
