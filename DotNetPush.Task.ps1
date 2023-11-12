@@ -8,21 +8,19 @@ Add-BuildTask DotNetPush @{
 
         foreach ($project in $dotnetProjects) {
             $Name = Split-Path $project -LeafBase
-            if (Test-Path "Variable:GitVersion.$Name") {
-                $options["p"] = "Version=$((Get-Variable "GitVersion.$Name" -ValueOnly).InformationalVersion)"
-            }
+            $options["p"] = "Version=$($GitVersion.$Name.InformationalVersion)"
 
             Write-Host "Publishing $name"
 
             Set-Location (Split-Path $project)
             $OutputFolder = @($dotnetProjects).Count -gt 1 ? "$DotNetPublishRoot${/}$Name" : $DotNetPublishRoot
 
-            $Package = Get-ChildItem $OutputFolder -Recurse -Filter "*$Name*$($GitVersion.MajorMinorPatch).nupkg"
+            $Package = Get-ChildItem $OutputFolder -Recurse -Filter "*$Name*$($GitVersion.$Name.MajorMinorPatch).nupkg"
 
             if ($BuildSystem -ne 'None' -and
                 $BranchName -in "master", "main" -and
                 -not [string]::IsNullOrWhiteSpace($NuGetPublishKey)) {
-                    Write-Host "$OutputFolder" "-Recurse" "-Filter" "*$Name*$($GitVersion.MajorMinorPatch).nupkg"
+                    Write-Host "$OutputFolder" "-Recurse" "-Filter" "*$Name*$($GitVersion.$Name.MajorMinorPatch).nupkg"
                     Write-Build Gray "dotnet nuget push $package --api-key $NuGetPublishKey --source $NuGetPublishUri"
                     dotnet nuget push $package --api-key $NuGetPublishKey --source $NuGetPublishUri
             } else {

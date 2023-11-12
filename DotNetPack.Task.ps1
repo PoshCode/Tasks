@@ -8,8 +8,8 @@ Add-BuildTask DotNetPack @{
 
         foreach ($project in $dotnetProjects) {
             $Name = Split-Path $project -LeafBase
-            if (Test-Path "Variable:GitVersion.$Name") {
-                $options["p"] = "Version=$((Get-Variable "GitVersion.$Name" -ValueOnly).InformationalVersion)"
+            if ($GitVersion.$Name) {
+                $options["p"] = "Version=$($GitVersion.$Name.InformationalVersion)"
             }
 
             Write-Host "Publishing $Name"

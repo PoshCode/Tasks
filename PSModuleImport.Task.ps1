@@ -7,7 +7,7 @@ Add-BuildTask PSModuleImport "PSModuleRestore", "PSModuleBuild", {
             $loaded | Remove-Module -Force
         }
 
-        "Importing Module '$PSModuleName' $($Script:GitVersion.SemVer) from '$PSModuleManifestPath'"
+        "Importing Module '$PSModuleName' $($Script:GitVersion.$PSModuleName.SemVer) from '$PSModuleManifestPath'"
         Import-Module -Name $PSModuleManifestPath -Force -PassThru:$PassThru
     } else {
         throw "Cannot find module manifest $PSModuleName in '$PSModuleOutputPath'"
