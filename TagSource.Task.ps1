@@ -1,7 +1,10 @@
 Add-BuildTask TagSource @{
     If   = { $script:BranchName -match "main|master" }
     Jobs = "GitVersion", {
-        git tag ("v" + $script:GitVersion.MajorMinorPatch) -m "Release $($script:GitVersion.InformationalVersion)"
-        git push origin --tags
+        foreach ($Name in $PackageNames) {
+            $Version = (Get-Variable "GitVersion.$($Name.ToLower())" -ValueOnly)
+            git tag $Version.Tag -m "Release $($Version.InformationalVersion)"
+            git push origin --tags
+        }
     }
 }
