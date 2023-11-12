@@ -268,17 +268,17 @@ if ($PSModuleName -and $dotnetProjects -or $DotNetPublishRoot) {
     Add-BuildTask Build DotNetRestore, PSModuleRestore, GitVersion, DotNetBuild, DotNetPublish, PSModuleBuild #, PSModuleBuildHelp
     Add-BuildTask Test Build, DotNetTest, PSModuleAnalyze, PSModuleTest
     Add-BuildTask Pack Test, TagSource, DotNetPack
-    Add-BuildTask Publish Pack, DotNetPush, PSModulePublish
+    Add-BuildTask Push Pack, DotNetPush, PSModulePush
 } elseif ($PSModuleName) {
     Add-BuildTask Build PSModuleRestore, GitVersion, PSModuleBuild #, PSModuleBuildHelp
     Add-BuildTask Test Build, PSModuleAnalyze, PSModuleTest
     Add-BuildTask Pack Test, TagSource
-    Add-BuildTask Publish Pack, PSModulePublish
+    Add-BuildTask Push Pack, PSModulePush
 } elseif ($dotnetProjects) {
     Add-BuildTask Build DotNetRestore, GitVersion, DotNetBuild, DotNetPublish
     Add-BuildTask Test Build, DotNetTest
     Add-BuildTask Pack Test, TagSource
-    Add-BuildTask Publish Pack, DotNetPack, DotNetPush
+    Add-BuildTask Push Pack, DotNetPack, DotNetPush
 }
 
 # Finally, import all the Task.ps1 files in this folder

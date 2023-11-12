@@ -1,4 +1,4 @@
-Add-BuildTask PSModulePublish {
+Add-BuildTask PSModulePush {
     if ($BuildSystem -ne 'None' -and
         $BranchName -in "master","main" -and
         -not [string]::IsNullOrWhiteSpace($PSModulePublishKey)) {
@@ -40,3 +40,4 @@ Add-BuildTask PSModulePublish {
         "`t* The repository APIKey is defined in `$PSModulePublishKey (Current: $(![string]::IsNullOrWhiteSpace($PSModulePublishKey)))")
     }
 }
+Add-BuildTask PSModulePublish PSModulePush
