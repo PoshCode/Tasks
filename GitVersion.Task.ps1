@@ -71,7 +71,11 @@ Add-BuildTask GitVersion @{
                 if (!(Test-Path $VersionFile)) {
                     throw "GitVersion failed to produce a version file or a log file"
                 } else {
-                    $GitVersion = Get-Content $VersionFile | ConvertFrom-Json |
+                    $VersionContent = Get-Content $VersionFile
+                    if (!$VersionContent) {
+                        throw "GitVersion produced an empty version file"
+                    }
+                    $GitVersion = $VersionContent | ConvertFrom-Json |
                         Add-Member ScriptProperty Tag -Value { $GitVersionTagPrefix + $this.SemVer } -PassThru
                     $GitVersion | Format-List | Out-Host
                 }
