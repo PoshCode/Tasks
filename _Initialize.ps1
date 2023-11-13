@@ -242,9 +242,9 @@ if ($PSModuleName) {
     Write-Information "  PSRepository: $PSRepository"
 
     # In order to publish modules, you may need to set these before running the build
-    $script:PSModulePublishUri ??= $Env:PSMODULE_PUBLISH_URI ?? "https://www.powershellgallery.com/api/v2"
-    $script:PSModulePublishKey ??= $Env:PSMODULE_PUBLISH_KEY
-    Write-Information "  PSModulePublishUri: $PSModulePublishUri"
+    $script:PSGalleryUri ??= $Env:PSGALLERY_URI ?? "https://www.powershellgallery.com/api/v2"
+    $script:PSGalleryKey ??= $Env:PSGALLERY_API_KEY
+    Write-Information "  PSGalleryUri: $PSGalleryUri"
 }
 #endregion
 

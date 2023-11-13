@@ -64,9 +64,9 @@ if ($dotnetProjects) {
     }
 } else {
     if ($Clean) {
-        Add-BuildTask . Clean, GitVersion, PSModuleRestore, PSModuleBuild, PSModuleTest, PSModulePublish
+        Add-BuildTask . Clean, GitVersion, PSModuleRestore, PSModuleBuild, PSModuleTest, PSModulePush
     } else {
-        Add-BuildTask . GitVersion, PSModuleRestore, PSModuleBuild, PSModuleTest, PSModulePublish
+        Add-BuildTask . GitVersion, PSModuleRestore, PSModuleBuild, PSModuleTest, PSModulePush
     }
 }
 
