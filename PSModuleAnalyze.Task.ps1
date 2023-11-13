@@ -1,4 +1,4 @@
-Add-BuildTask PSModuleAnalyze PSModuleBuild, {
+Add-BuildTask PSModuleAnalyze PSModuleBuild, PSModuleImport, {
     $ScriptAnalyzer = @{
         IncludeDefaultRules = $true
         Path                = @(Get-ChildItem $PSModuleOutputPath -Filter "$PSModuleName.psm1" -Recurse)[-1]
