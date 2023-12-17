@@ -48,12 +48,12 @@ Write-Information "  Configuration: $script:Configuration"
 
 # NOTE: this variable is currently also used for Pester formatting ...
 # So we must use either "AzureDevOps", "GithubActions", or "None"
-$script:BuildSystem = if (Test-Path Env:EARTHLY_BUILD_SHA) {
-    "Earthly"
-} elseif (Test-Path Env:GITHUB_ACTIONS) {
+$script:BuildSystem = if (Test-Path Env:GITHUB_ACTIONS) {
     "GithubActions"
 } elseif (Test-Path Env:SYSTEM_TEAMFOUNDATIONCOLLECTIONURI) {
     "AzureDevops"
+} elseif (Test-Path Env:EARTHLY_BUILD_SHA) {
+    "Earthly"
 } else {
     "None"
 }

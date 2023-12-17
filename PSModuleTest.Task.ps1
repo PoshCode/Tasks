@@ -123,7 +123,7 @@ Add-BuildTask PSModuleTest @{
                         $PesterOptions.Config.CodeCoverage.CoveragePercentTarget = $CodeCoveragePercentTarget * 100
                     }
                     # Work around bug in output format. Valid values are "AzureDevOps", "None", "Auto", "GithubActions"
-                    $PesterOptions.Config.Output.CIFormat = $BuildSystem
+                    $PesterOptions.Config.Output.CIFormat = $BuildSystem -ne 'Earthly' ? $BuildSystem : 'Auto'
                 } else {
                     $PesterModule["MaximumVersion"] = "4.99.99"
 
@@ -132,7 +132,7 @@ Add-BuildTask PSModuleTest @{
                         OutputFile   = $TestResultOutputPath
                         OutputFormat = 'NUnitXml'
                         PassThru     = $true
-                        Show         = 'Failed', 'Summary'
+                        Show         = 'Failed', 'Summary', 'Header', 'All'
                         Tag          = @($PesterFilter.Tag)
                         ExcludeTag   = @($PesterFilter.ExcludeTags)
                     }
