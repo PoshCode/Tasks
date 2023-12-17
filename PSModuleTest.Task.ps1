@@ -14,10 +14,10 @@
 #>
 
 Add-BuildTask PSModuleTest @{
-    If      = Get-ChildItem ($PSModuleTestPath ?? "$BuildRoot${/}Tests") -Recurse -File -Filter *.tests.ps1
+    If      = Get-ChildItem ($PSModuleTestPath ?? "$BuildRoot${/}tests") | Get-ChildItem -Recurse -File -Filter *.tests.ps1
     Inputs  = {
         Get-ChildItem $PSModuleOutputPath -Recurse -File
-        Get-ChildItem ($PSModuleTestPath ?? "$BuildRoot${/}Tests") -Recurse -File -Filter *.tests.ps1
+        Get-ChildItem ($PSModuleTestPath ?? "$BuildRoot${/}tests") | Get-ChildItem -Recurse -File -Filter *.tests.ps1
     }
     Outputs = {
         if ($Clean) {
@@ -27,7 +27,7 @@ Add-BuildTask PSModuleTest @{
         }
     }
     Jobs    = "PSModuleImport", {
-            $PSModuleTestPath ??= "$BuildRoot${/}Tests"
+            $PSModuleTestPath ??= "$BuildRoot${/}[Tt]ests"
             # The output path, by convention: TestResults.xml in your output folder
             $TestResultOutputPath ??= Join-Path $OutputRoot "TestResult.xml"
 
