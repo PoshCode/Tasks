@@ -35,19 +35,19 @@ Add-BuildTask PSModuleTest @{
 
 
         # For PowerShell Modules with classes to work in tests:
-        # 1. The $OutputRoot directory must be first on Env:PSMODULEPATH
+        # 1. The $OutputRoot directory must be first on Env:PSModulePath
         # 2. The $PSModuleName directory must be in $OutputRoot directory
         # 3. The $PSModuleName.psd1 file must be in the $PSModuleName directory
         if (-not (Test-Path "$OutputRoot${/}$PSModuleName${/}$PSModuleName.psd1")) {
             throw "Cannot test module if it's not in $OutputRoot${/}$PSModuleName${/}$PSModuleName.psd1"
         } else {
-            $TestModulePath = @($OutputRoot) + @($Env:PSMODULEPATH -split [IO.Path]::PathSeparator -ne $OutputRoot) -join [IO.Path]::PathSeparator
-            $Env:PSMODULEPATH, $OldModulePath = $TestModulePath, $Env:PSMODULEPATH
+            $TestModulePath = @($OutputRoot) + @($Env:PSModulePath -split [IO.Path]::PathSeparator -ne $OutputRoot) -join [IO.Path]::PathSeparator
+            $Env:PSModulePath, $OldModulePath = $TestModulePath, $Env:PSModulePath
             try {
                 $PSModuleManifestPath = Get-ChildItem $PSModuleOutputPath -Filter "$PSModuleName.psm1" -Recurse -ErrorAction Ignore
                 Write-Output (@(
                         "Set PSModulePath:"
-                        $Env:PSMODULEPATH
+                        $Env:PSModulePath
                         ""
                         "Module Under Test at: $PSModuleManifestPath"
                         Get-Module $PSModuleName -ListAvailable | Format-Table Version, Path | Out-String
@@ -162,7 +162,7 @@ Add-BuildTask PSModuleTest @{
 
             } finally {
                 Write-Verbose "Restoring PSModulePath to $OldModulePath" -Verbose
-                $Env:PSMODULEPATH = $OldModulePath
+                $Env:PSModulePath = $OldModulePath
             }
         }
     }
