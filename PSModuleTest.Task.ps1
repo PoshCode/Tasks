@@ -34,12 +34,17 @@ Add-BuildTask PSModuleTest @{
             $PesterFilter ??= if ($BuildSystem -ne "None") { @{ "ExcludeTag" = 'NoCI' } }
 
 
+        $Version = $GitVersion.$PSModuleName.MajorMinorPatch
+
+        # Write-Information "Build-Module -SourcePath $PSModuleSourcePath -Destination $PSModuleOutputPath -SemVer $SemVer"
+        # $Module = Build-Module -SourcePath $PSModuleSourcePath -Destination $PSModuleOutputPath -SemVer $SemVer -Verbose:$Verbose -Debug:$Debug -Passthru
+
         # For PowerShell Modules with classes to work in tests:
         # 1. The $OutputRoot directory must be first on Env:PSModulePath
         # 2. The $PSModuleName directory must be in $OutputRoot directory
         # 3. The $PSModuleName.psd1 file must be in the $PSModuleName directory
-        if (-not (Test-Path "$OutputRoot${/}$PSModuleName${/}$PSModuleName.psd1")) {
-            throw "Cannot test module if it's not in $OutputRoot${/}$PSModuleName${/}$PSModuleName.psd1"
+        if (-not ((Test-Path "$OutputRoot${/}$PSModuleName${/}$PSModuleName.psd1", "$OutputRoot${/}$PSModuleName${/}$Version${/}$PSModuleName.psd1") -contains $true)) {
+            throw "Cannot test module if it's not in $OutputRoot${/}$PSModuleName"
         } else {
             $TestModulePath = @($OutputRoot) + @($Env:PSModulePath -split [IO.Path]::PathSeparator -ne $OutputRoot) -join [IO.Path]::PathSeparator
             $Env:PSModulePath, $OldModulePath = $TestModulePath, $Env:PSModulePath
