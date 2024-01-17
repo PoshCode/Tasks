@@ -14,10 +14,10 @@
 #>
 
 Add-BuildTask PSModuleTest @{
-    If      = Get-ChildItem ($PSModuleTestPath ?? "$BuildRoot${/}tests") | Get-ChildItem -Recurse -File -Filter *.tests.ps1
+    If      = Get-ChildItem ($PSModuleTestPath ?? "$BuildRoot${/}[Tt]ests") | Get-ChildItem -Recurse -File -Filter *.tests.ps1
     Inputs  = {
         Get-ChildItem $PSModuleOutputPath -Recurse -File
-        Get-ChildItem ($PSModuleTestPath ?? "$BuildRoot${/}tests") | Get-ChildItem -Recurse -File -Filter *.tests.ps1
+        Get-ChildItem ($PSModuleTestPath ?? "$BuildRoot${/}[Tt]ests") | Get-ChildItem -Recurse -File -Filter *.tests.ps1
     }
     Outputs = {
         if ($Clean) {
