@@ -59,7 +59,7 @@ if (Test-Path $ProjectFile) {
 
 Write-Information "Ensure GitVersion"
 if (!(Get-Command dotnet-gitversion -ErrorAction SilentlyContinue)) {
-    dotnet tool update GitVersion.Tool --global # --verbosity normal
+    dotnet tool update GitVersion.Tool --version 5.12.0 --global # 6.x doesn't support SemVer 1 which is what PowerShell uses.
     # TODO: implement semi-permanent PATH modification for github and azure
     $ENV:PATH += ([IO.Path]::PathSeparator) + (Convert-Path $HOME/.dotnet/tools)
 }
