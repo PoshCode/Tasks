@@ -1,6 +1,6 @@
 Add-BuildTask PSModuleImport "PSModuleRestore", "PSModuleBuild", {
     # Always re-import the module -- don't try to guess if it's been changed
-    if ($PSModuleManifestPath = Get-ChildItem $PSModuleOutputPath -Filter "$PSModuleName.psm1" -Recurse -ErrorAction Ignore) {
+    if ($PSModuleManifestPath = Get-ChildItem $PSModuleOutputPath -Filter "$PSModuleName.psd1" -Recurse -ErrorAction Ignore) {
 
         if (($loaded = Get-Module -Name $PSModuleName -All -ErrorAction Ignore)) {
             "Unloading Module '$PSModuleName' $($loaded.Version -join ', ')"
