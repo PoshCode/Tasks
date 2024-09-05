@@ -110,7 +110,7 @@ Add-BuildTask PSModuleTest @{
                             ShowNavigationMarkers = $Host.Name -match "Visual Studio Code"
                         }
                     }
-                    if ($PSCmdlet.ParameterSetName -eq "CodeCoverage") {
+                    if ($Script:RequiredCodeCoverage -gt 0.00) {
                         $Configuration['CodeCoverage'] = @{
                             Enabled               = $true
                             Path                  = $CodeCoveragePath
@@ -123,7 +123,7 @@ Add-BuildTask PSModuleTest @{
                         Config = New-PesterConfiguration $Configuration
                     }
 
-                    if ($PSCmdlet.ParameterSetName -eq "CodeCoverage") {
+                    if ($Script:RequiredCodeCoverage -gt 0.00) {
                         # Work around bug in CodeCoverage Config
                         $PesterOptions.Config.CodeCoverage.CoveragePercentTarget = $CodeCoveragePercentTarget * 100
                     }
@@ -141,7 +141,7 @@ Add-BuildTask PSModuleTest @{
                         Tag          = @($PesterFilter.Tag)
                         ExcludeTag   = @($PesterFilter.ExcludeTags)
                     }
-                    if ($PSCmdlet.ParameterSetName -eq "CodeCoverage") {
+                    if ($Script:RequiredCodeCoverage -gt 0.00) {
                         $PesterOptions['CodeCoverage'] = $CodeCoveragePath
                         $PesterOptions['CodeCoverageOutputFile'] = $CodeCoverageOutputPath
                     }
@@ -154,7 +154,7 @@ Add-BuildTask PSModuleTest @{
                     throw "##[error]Failed Pester tests."
                 }
 
-                if ($PSCmdlet.ParameterSetName -eq "CodeCoverage") {
+                if ($Script:RequiredCodeCoverage -gt 0.00) {
                     $ExecutedPercent = if ($results.CodeCoverage.NumberOfCommandsExecuted) {
                         $results.CodeCoverage.NumberOfCommandsExecuted / $results.CodeCoverage.NumberOfCommandsAnalyzed
                     } else {
