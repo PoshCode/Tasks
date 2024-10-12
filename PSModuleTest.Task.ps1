@@ -14,22 +14,22 @@
 #>
 
 Add-BuildTask PSModuleTest @{
-    If      = Get-ChildItem ($PSModuleTestPath ?? "$BuildRoot${/}[Tt]ests") | Get-ChildItem -Recurse -File -Filter *.tests.ps1
+    If      = Get-ChildItem ($PSModuleTestPath ?? "$BuildRoot${/}[Tt]ests") | Get-ChildItem -Recurse -File -Filter *.?ests.ps1
     Inputs  = {
         Get-ChildItem $PSModuleOutputPath -Recurse -File
-        Get-ChildItem ($PSModuleTestPath ?? "$BuildRoot${/}[Tt]ests") | Get-ChildItem -Recurse -File -Filter *.tests.ps1
+        Get-ChildItem ($PSModuleTestPath ?? "$BuildRoot${/}[Tt]ests") | Get-ChildItem -Recurse -File -Filter *.?ests.ps1
     }
     Outputs = {
         if ($Clean) {
             $BuildRoot # guaranteed to be old
         } else {
-            "$OutputRoot${/}TestResults.xml"
+            "$TestResultsRoot${/}TestResults.xml"
         }
     }
     Jobs    = "PSModuleImport", {
             $PSModuleTestPath ??= "$BuildRoot${/}[Tt]ests"
             # The output path, by convention: TestResults.xml in your output folder
-            $TestResultOutputPath ??= Join-Path $OutputRoot "TestResult.xml"
+            $TestResultOutputPath ??= Join-Path $TestResultsRoot "TestResult.xml"
 
             $PesterFilter ??= if ($BuildSystem -ne "None") { @{ "ExcludeTag" = 'NoCI' } }
 
@@ -64,7 +64,7 @@ Add-BuildTask PSModuleTest @{
 
                 if ($Script:RequiredCodeCoverage -gt 0.00) {
                     $CodeCoveragePath = $PSModuleManifestPath
-                    $CodeCoverageOutputPath = "$OutputRoot${/}coverage.xml"
+                    $CodeCoverageOutputPath = "$TestResultsRoot${/}coverage.xml"
                     $CodeCoveragePercentTarget = $RequiredCodeCoverage
                 }
 
