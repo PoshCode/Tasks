@@ -1,7 +1,7 @@
 Add-BuildTask PSModuleImport "PSModuleRestore", "PSModuleBuild", {
     $ModuleVer = $GitVersion.$PSModuleName.MajorMinorPatch
     # Always re-import the module -- don't try to guess if it's been changed
-    if ($PSModuleManifestPath = Get-ChildItem $PSModuleOutputPath/$ModuleVer -Filter "$PSModuleName.psd1" -Recurse -ErrorAction Ignore) {
+    if ($script:PSModuleManifestPath = Get-ChildItem $PSModuleOutputPath/$ModuleVer -Filter "$PSModuleName.psd1" -Recurse -ErrorAction Ignore) {
 
         if (($loaded = Get-Module -Name $PSModuleName -All -ErrorAction Ignore)) {
             "Unloading Module '$PSModuleName' $($loaded.Version -join ', ')"
