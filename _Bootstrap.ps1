@@ -26,6 +26,9 @@ param(
     # If this file is present, dotnet restore will be run on it.
     $ProjectFile = (Join-Path $pwd "*.*proj"),
 
+    # Path to the dotnet-tools.json file
+    $ToolsFile = (Get-ChildItem -Recurse -Force -Filter dotnet-tools.json -ErrorAction Ignore),
+
     # Scope for installation (of scripts and modules). Defaults to CurrentUser
     [ValidateSet("AllUsers", "CurrentUser")]
     $Scope = "CurrentUser"
@@ -57,9 +60,14 @@ if (Test-Path $ProjectFile) {
     dotnet restore $ProjectFile --ucr
 }
 
-Write-Information "Ensure GitVersion"
-if (!(Get-Command dotnet-gitversion -ErrorAction SilentlyContinue)) {
-    dotnet tool update GitVersion.Tool --version 5.12.0 --global # 6.x doesn't support SemVer 1 which is what PowerShell uses.
+if (Test-Path $ToolsFile) {
+    Write-Information "Ensure dotnet tool dependencies"
+    dotnet tool restore --tool-manifest $ToolsFile
+}
+
+if ((dotnet tool list gitversion.tool).Count -lt 3) {
+    Write-Information "Ensure GitVersion.tool"
+    dotnet tool update gitversion.tool --version 5.12.0 --global # 6.x doesn't support SemVer 1 which is what PowerShell uses.
     # TODO: implement semi-permanent PATH modification for github and azure
     $ENV:PATH += ([IO.Path]::PathSeparator) + (Convert-Path $HOME/.dotnet/tools)
 }
