@@ -26,7 +26,7 @@ param(
     # If this file is present, dotnet restore will be run on it.
     $ProjectFile = (Join-Path $pwd "*.*proj"),
 
-    # Path to the dotnet-tools.json file
+    # Path to a dotnet-tools.json file
     $ToolsFile = (Join-Path $pwd .config dotnet-tools.json),
 
     # Scope for installation (of scripts and modules). Defaults to CurrentUser
@@ -60,15 +60,22 @@ if (Test-Path $ProjectFile) {
     dotnet restore $ProjectFile --ucr
 }
 
-if (Test-Path $ToolsFile) {
+if ($ToolsFile) {
     Write-Information "Ensure dotnet tool dependencies"
-    dotnet tool restore --tool-manifest $ToolsFile
+    if (Test-Path $ToolsFile) {
+        dotnet tool restore --tool-manifest $ToolsFile
+    }
 }
 
-if ((dotnet tool list gitversion.tool).Count -lt 3) {
-    Write-Information "Ensure GitVersion.tool"
-    dotnet tool update gitversion.tool --version 5.12.0 --global # 6.x doesn't support SemVer 1 which is what PowerShell uses.
-    # TODO: implement semi-permanent PATH modification for github and azure
+# Regardless of whether you have a dotnet-tools.json file,
+# I need gitversion 5.x (the new 6.x version has breaking changes I don't like)
+# dotnet 8+ can "list" tool names, but this old syntax still works:
+Write-Information "Ensure GitVersion.tool 5.x"
+dotnet tool restore --tool-manifest (Join-Path $PSScriptRoot .config dotnet-tools.json)
+
+# TODO: implement semi-permanent PATH modification for github and azure
+if (Test-Path $HOME/.dotnet/tools) {
+    Write-Information "Ensure dotnet tools in PATH"
     $ENV:PATH += ([IO.Path]::PathSeparator) + (Convert-Path $HOME/.dotnet/tools)
 }
 
@@ -89,7 +96,7 @@ if (Test-Path $RequiredModulesPath) {
     Write-Information "Ensure Required Modules"
     & $InstallRequiredModule $RequiredModulesPath -Scope $Scope -Confirm:$false
 } else {
-    Write-Information "Ensure Required Modules"
+    Write-Information "Ensure InvokeBuild"
     # The default required modules is just InvokeBuild
     & $InstallRequiredModule @{ InvokeBuild = "5.*" } -Scope $Scope -Confirm:$false
 }
