@@ -26,9 +26,6 @@ param(
     # If this file is present, dotnet restore will be run on it.
     $ProjectFile = (Join-Path $pwd "*.*proj"),
 
-    # Path to a dotnet-tools.json file
-    $ToolsFile = (Join-Path $pwd .config dotnet-tools.json),
-
     # Scope for installation (of scripts and modules). Defaults to CurrentUser
     [ValidateSet("AllUsers", "CurrentUser")]
     $Scope = "CurrentUser"
@@ -60,22 +57,25 @@ if (Test-Path $ProjectFile) {
     dotnet restore $ProjectFile --ucr
 }
 
-if ($ToolsFile) {
-    Write-Information "Ensure dotnet tool dependencies"
+# If there is a dotnet-tools.json file, restore the tools
+if (Join-Path $pwd .config dotnet-tools.json | Test-Path) {
+    Write-Information "Restore dotnet tools"
     if (Test-Path $ToolsFile) {
         dotnet tool restore --tool-manifest $ToolsFile
     }
 }
 
-# Regardless of whether you have a dotnet-tools.json file,
-# I need gitversion 5.x (the new 6.x version has breaking changes I don't like)
+# Regardless of whether you have a dotnet-tools.json file, we need gitversion global tool
 # dotnet 8+ can "list" tool names, but this old syntax still works:
-Write-Information "Ensure GitVersion.tool 5.x"
-dotnet tool restore --tool-manifest (Join-Path $PSScriptRoot .config dotnet-tools.json)
+if (dotnet tool list -g | Select-String "gitversion.tool") {
+    Write-Information "Ensure GitVersion.tool"
+    # We need gitversion 5.x (the new 6.x version will not support SemVer 1 that PowerShell still uses)
+    dotnet tool update gitversion.tool --version 5.* --global
+}
 
-# TODO: implement semi-permanent PATH modification for github and azure
 if (Test-Path $HOME/.dotnet/tools) {
-    Write-Information "Ensure dotnet tools in PATH"
+    Write-Information "Ensure dotnet global tools in PATH"
+    # TODO: implement semi-permanent PATH modification for github and azure
     $ENV:PATH += ([IO.Path]::PathSeparator) + (Convert-Path $HOME/.dotnet/tools)
 }
 
