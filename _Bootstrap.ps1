@@ -27,7 +27,7 @@ param(
     $ProjectFile = (Join-Path $pwd "*.*proj"),
 
     # Path to the dotnet-tools.json file
-    $ToolsFile = (Get-ChildItem -Recurse -Force -Filter dotnet-tools.json -ErrorAction Ignore),
+    $ToolsFile = (Join-Path $pwd .config dotnet-tools.json),
 
     # Scope for installation (of scripts and modules). Defaults to CurrentUser
     [ValidateSet("AllUsers", "CurrentUser")]
