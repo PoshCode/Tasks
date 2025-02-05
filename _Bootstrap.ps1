@@ -67,7 +67,7 @@ if (Join-Path $pwd .config dotnet-tools.json | Test-Path) {
 
 # Regardless of whether you have a dotnet-tools.json file, we need gitversion global tool
 # dotnet 8+ can "list" tool names, but this old syntax still works:
-if (dotnet tool list -g | Select-String "gitversion.tool") {
+if (!(dotnet tool list -g | Select-String "gitversion.tool")) {
     Write-Information "Ensure GitVersion.tool"
     # We need gitversion 5.x (the new 6.x version will not support SemVer 1 that PowerShell still uses)
     dotnet tool update gitversion.tool --version 5.* --global
