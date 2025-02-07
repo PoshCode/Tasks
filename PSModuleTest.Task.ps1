@@ -70,7 +70,7 @@ Add-BuildTask PSModuleTest @{
 
                 # The version of Pester to use (by default, reads RequiredModules and supports 4.x or 5.x)
                 if (!$PesterVersion) {
-                    $PesterVersion = Get-Item $Script:BuildRoot${/}RequiredModules.psd1, $PSScriptRoot${/}RequiredModules.psd1 -ErrorAction SilentlyContinue |
+                    $PesterVersion = Get-Item $Script:BuildRoot${/}RequiredModules.psd1, $PSScriptRoot${/}RequiredModules.psd1, $Script:BuildRoot${/}*.requires.psd1, $PSScriptRoot${/}*.requires.psd1 -ErrorAction SilentlyContinue |
                         Select-Object -First 1 |
                         Import-Metadata |
                         ForEach-Object { $_.Pester -Split "[[,]" } |

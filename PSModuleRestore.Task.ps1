@@ -1,20 +1,34 @@
 Add-BuildTask PSModuleRestore @{
-    If      = Test-Path $BuildRoot${/}RequiredModules.psd1
-    Inputs  = "$BuildRoot${/}RequiredModules.psd1"
-    Outputs = "$OutputRoot${/}RequiredModules.psd1"
+    If      = (Test-Path "$BuildRoot${/}RequiredModules.psd1", "$BuildRoot${/}*.requires.psd1") -contains $true
+    Inputs  = "$BuildRoot${/}RequiredModules.psd1", "$BuildRoot${/}*.requires.psd1" | Convert-Path -ErrorAction ignore
+    Outputs = "$OutputRoot${/}*.requires.psd1"
     Jobs    = {
-        # Copy the metadata to the output as a way to avoid re-running this step over and over
-        Copy-Item "$BuildRoot${/}RequiredModules.psd1" -Destination "$OutputRoot${/}RequiredModules.psd1"
+        "$BuildRoot${/}*.requires.psd1", "$BuildRoot${/}RequiredModules.psd1"
+        | Convert-Path -ErrorAction ignore -OutVariable RequiresPath
 
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-        # This should install in the user's script folder (wherever that is). Passthru will tell us where.
-        $Script = Install-Script Install-RequiredModule -NoPathUpdate -Force -PassThru -Scope CurrentUser
-        & (Join-Path $Script.InstalledLocation "Install-RequiredModule.ps1") "$BuildRoot${/}RequiredModules.psd1" -Scope CurrentUser -Confirm:$false -Verbose:$Verbose
-
-        foreach ($installErr in $IRM_InstallErrors) {
-            Write-Warning "ERROR: $installErr"
-            Write-Warning "STACKTRACE: $($installErr.ScriptStackTrace)"
+        # TODO: Deprecate RequiredModules.psd1
+        if ((Split-Path $RequiresPath -Leaf) -eq "RequiredModules.psd1") {
+            Write-Information "Translating RequiredModules.psd1 to Specification"
+            $Modules = Import-PowerShellDataFile $RequiresPath
+            # Pull a switcheroo
+            $RequiresPath = Join-Path (Split-Path $RequiresPath) "build.requires.psd1"
+            @(
+                "@{"
+                foreach ($ModuleName in $Modules.Keys) {
+                    "    ""$ModuleName"" = "":" + $Modules[$ModuleName] + """"
+                }
+                "}"
+            ) | Out-File $RequiresPath
         }
-        Write-Progress "Importing Modules" -Completed
+        # TODO: Switch to generating a lockfile?
+        Copy-Item $RequiresPath -Destination "$OutputRoot${/}"
+
+        $Destination = if ($IsWindows) {
+            Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'PowerShell/Modules'
+        } else {
+            Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'powershell/Modules'
+        }
+
+        Install-ModuleFast -Destination $Destination -Path $RequiresPath -Verbose
     }
 }

@@ -24,8 +24,6 @@ param(
     # NOTE: If this file is missing, we'll still install InvokeBuild, but if you have a requires spec, don't forget to include InvokeBuild in it!
     [Alias("RequiredModulesPath")]
     $RequiresPath = (@(@(Join-Path $pwd "*.requires.psd1"
-                        Join-Path $pwd "*.requires.json"
-                        Join-Path $pwd "*.requires.jsonc"
                         Join-Path $pwd "RequiredModules.psd1"
                     ) | Convert-Path -ErrorAction Ignore)[0]),
 
@@ -112,12 +110,17 @@ if ($RequiresPath) {
     if ((Split-Path $RequiresPath -Leaf) -eq "RequiredModules.psd1") {
         Write-Information "Translating RequiredModules.psd1 to Specification"
         $Modules = Import-PowerShellDataFile $RequiresPath
-        $ModuleFast["Specification"] = foreach ($ModuleName in $Modules.Keys) {
-            $Modules[$ModuleName] + ":" + $Modules[$ModuleName]
+        # Pull a switcheroo
+        $RequiresPath = Join-Path (Split-Path $RequiresPath) "build.requires.psd1"
+        @(
+        "@{"
+        foreach ($ModuleName in $Modules.Keys) {
+            "    ""$ModuleName"" = "":" + $Modules[$ModuleName] + """"
         }
-    } else {
-        $ModuleFast["Path"] = $RequiresPath
+        "}"
+        ) | Out-File $RequiresPath
     }
+    $ModuleFast["Path"] = $RequiresPath
 } else {
     $ModuleFast["Specification"] = "InvokeBuild:5.*"
 }
