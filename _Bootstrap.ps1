@@ -13,14 +13,21 @@ param(
     # When running locally, you can -Force to skip the confirmation prompts
     [switch]$Force,
 
-    # I require dotnet, and gitversion
+    # I require dotnet, and git version
     # Defaults to the "7.0" channel, change it to change the minimum version
     [double]$DotNet = "7.0",
 
-    # Path to a RequiredModules.psd1
-    # If this file is present, Install-RequiredModule will be run on it.
-    # NOTE: If this file is missing, we'll still install InvokeBuild, but if you have a RequiredModules.psd1, don't forget to include InvokeBuild in it!
-    $RequiredModulesPath = (Join-Path $pwd "RequiredModules.psd1"),
+    # Path to a file listing required PowerShell modules.
+    # See also: https://github.com/marketplace/actions/modulefast#requiresspec
+    # I now use Install-ModuleFast to install modules, but I'll translate "RequiredModules.psd1" for you
+    # Any other file name will be passed to Install-ModuleFast -Path
+    # NOTE: If this file is missing, we'll still install InvokeBuild, but if you have a requires spec, don't forget to include InvokeBuild in it!
+    [Alias("RequiredModulesPath")]
+    $RequiresPath = (@(@(Join-Path $pwd "*.requires.psd1"
+                        Join-Path $pwd "*.requires.json"
+                        Join-Path $pwd "*.requires.jsonc"
+                        Join-Path $pwd "RequiredModules.psd1"
+                    ) | Convert-Path -ErrorAction Ignore)[0]),
 
     # Path to a .*proj file or .sln
     # If this file is present, dotnet restore will be run on it.
@@ -79,27 +86,43 @@ if (Test-Path $HOME/.dotnet/tools) {
     $ENV:PATH += ([IO.Path]::PathSeparator) + (Convert-Path $HOME/.dotnet/tools)
 }
 
-Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-Write-Information "Ensure Install-RequiredModule"
-if (!($InstallRequiredModule = Get-Command Install-RequiredModule -ErrorAction SilentlyContinue)) {
-    # This should install in the user's script folder (wherever that is). Passthru will tell us where.
-    $Script = Install-Script Install-RequiredModule -NoPathUpdate -Force -PassThru -Scope $Scope
-
-    # TODO: implement semi-permanent PATH modification for github and azure
-    $ENV:PATH += ([IO.Path]::PathSeparator) + (Convert-Path $Script.InstalledLocation)
-
-    $InstallRequiredModule = Join-Path $Script.InstalledLocation "Install-RequiredModule.ps1"
-    # Set-Alias -Scope Global Install-RequiredModule $InstallRequiredModule
-}
-
-if (Test-Path $RequiredModulesPath) {
-    Write-Information "Ensure Required Modules"
-    & $InstallRequiredModule $RequiredModulesPath -Scope $Scope -Confirm:$false
+# I don't want ModuleFast messing with the PSModulePath so we use the default user location
+$ModuleDestination = if ($IsWindows) {
+    Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'PowerShell/Modules'
 } else {
-    Write-Information "Ensure InvokeBuild"
-    # The default required modules is just InvokeBuild
-    & $InstallRequiredModule @{ InvokeBuild = "5.*" } -Scope $Scope -Confirm:$false
+    Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'powershell/Modules'
 }
+
+if (!(Get-Module ModuleFast -ListAvailable -ErrorAction SilentlyContinue)) {
+    Write-Information "Ensure ModuleFast in $ModuleDestination" -Verbose
+    # Skip using the api endpoint to avoid throtting, we can get latest from the redirect
+    $VersionTag = try { Invoke-WebRequest https://github.com/JustinGrote/ModuleFast/releases/latest -MaximumRedirection 0 } catch { Split-Path -Leaf $_.Exception.Response.Headers.Location.ToString() }
+    $zipFile = "ModuleFast.$($VersionTag.Trim('v')).zip"
+    $zip = "https://github.com/JustinGrote/ModuleFast/releases/download/$VersionTag/$zipFile"
+    Write-Information "Installing ModuleFast $Version from $zip" -Verbose
+    Invoke-WebRequest $zip -OutFile $zipFile
+    Expand-Archive $zipFile -DestinationPath $ModuleDestination
+    Remove-Item $zipFile
+}
+
+$ModuleFast = @{
+    Destination = $ModuleDestination
+}
+if ($RequiresPath) {
+    if ((Split-Path $RequiresPath -Leaf) -eq "RequiredModules.psd1") {
+        Write-Information "Translating RequiredModules.psd1 to Specification"
+        $Modules = Import-PowerShellDataFile $RequiresPath
+        $ModuleFast["Specification"] = foreach ($ModuleName in $Modules.Keys) {
+            $Modules[$ModuleName] + ":" + $Modules[$ModuleName]
+        }
+    } else {
+        $ModuleFast["Path"] = $RequiresPath
+    }
+} else {
+    $ModuleFast["Specification"] = "InvokeBuild:5.*"
+}
+
+Install-ModuleFast @ModuleFast -Verbose
 
 if ($IRM_InstallErrors) {
     foreach ($installErr in @($IRM_InstallErrors)) {
