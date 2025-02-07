@@ -1,9 +1,9 @@
 mode: mainline #  Each merged branch against main will increment the patch version unless otherwise specified in a commit message
 commit-date-format: "yyyyMMddTHHmmss"
-assembly-file-versioning-format: "{Major}.{Minor}.{Patch}.{env:BUILD_BUILDID ?? 0}"
+assembly-file-versioning-format: "{Major}.{Minor}.{Patch}.{env:GITHUB_RUN_NUMBER ?? 0}"
 
 # This repo needs to use NuGetVersionV2 for compatibility with PowerShellGallery
-assembly-informational-format: "{Major}.{Minor}.{Patch}{PreReleaseTagWithDash}+Build.{env:BUILD_BUILDID ?? local}.Branch.{EscapedBranchName}.Sha.{Sha}.Date.{CommitDate}"
+assembly-informational-format: "{NuGetVersionV2}+Build.{env:GITHUB_RUN_NUMBER ?? local}.Branch.{EscapedBranchName}.Sha.{Sha}.Date.{CommitDate}"
 major-version-bump-message: 'semver:\s?(breaking|major)'
 minor-version-bump-message: 'semver:\s?(feature|minor)'
 patch-version-bump-message: 'semver:\s?(fix|patch)'
@@ -12,7 +12,7 @@ commit-message-incrementing: Enabled
 
 branches:
   main:
-    tag: "" # explicitly no tag for master builds
+    tag: "" # explicitly no tag for main builds
     regex: ^master$|^main$
     increment: Patch
     is-mainline: true
