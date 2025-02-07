@@ -54,7 +54,6 @@ Add-BuildTask GitVersion @{
                 # We can't splat because it's 5 copies of the same parameter, so, use line-wrapping escapes:
                 # Also, the no-bump-message has to stay at .* or else every commit to main will increment all components
                 # Write-Host dotnet gitversion -config $GitVersionYaml -output file -outputfile $VersionFile -verbosity verbose
-                <# -output file -outputfile $VersionFile #>
                 dotnet gitversion -verbosity diagnostic -config $GitVersionYaml `
                     -overrideconfig tag-prefix="$($GitVersionTagPrefix)" `
                     -overrideconfig major-version-bump-message="$($GitVersionMessagePrefix):\s*(breaking|major)" `
@@ -74,9 +73,13 @@ Add-BuildTask GitVersion @{
                         throw "GitVersion produced an empty version file"
                     }
                     try {
-                        $Version = $VersionContent | ConvertFrom-Json
+                        $VersionContent.Where({ $_ -and $_ -match "\{" }, "Until").ForEach({ Write-Warning $_ })
+                        $ShouldBeVersionContent = $VersionContent.Where({ $_ -match "^\{$" }, "SkipUntil")
+                        $Version = $ShouldBeVersionContent | ConvertFrom-Json
                     } catch {
-                        throw "GitVersion produced an invalid version file: $VersionContent"
+                        Write-Warning "GitVersion produced an invalid version file ($($VersionContent.Length)):`n$($VersionContent -join "`n")"
+                        Write-Warning "ShouldBeVersionContent:`n$($ShouldBeVersionContent -join "`n")"
+                        throw $_
                     }
                 }
             } catch {
@@ -87,7 +90,6 @@ Add-BuildTask GitVersion @{
                     -overrideconfig minor-version-bump-message="$($GitVersionMessagePrefix):\s*(feature|minor)" `
                     -overrideconfig patch-version-bump-message="$($GitVersionMessagePrefix):\s*(fix|patch)" `
                     -overrideconfig no-bump-message="$($GitVersionMessagePrefix):\s*(skip|none)" > $VersionFile 2> $LogFile
-
 
                 if (Test-Path $LogFile) {
                     Write-Host $PSStyle.Formatting.Error ((Get-Content $LogFile) -join "`n") $PSStyle.Reset
@@ -101,7 +103,8 @@ Add-BuildTask GitVersion @{
                         throw "GitVersion produced an empty version file"
                     }
                     try {
-                        $Version = $VersionContent | ConvertFrom-Json
+                        $VersionContent.Where({ $_ -match "\{" }, "Until").ForEach({ $_ | Write-Warning })
+                        $Version = $VersionContent.Where({ $_ -match "\{" }, "SkipUntil") | ConvertFrom-Json
                     } catch {
                         throw "GitVersion produced an invalid version file: $VersionContent"
                     }
