@@ -5,18 +5,31 @@ Add-BuildTask PSModulePush {
 
         # If the $PSGalleryUri is set, make sure that's where we publish....
         if ($PSGalleryUri -and $Script:PSRepository) {
-            $PackageSource = Get-PSRepository -Name $Script:PSRepository -ErrorAction Ignore
-            If (-Not $PackageSource -or $PackageSource.PublishLocation -ne $PSGalleryUri) {
-                $source = @{
-                    Name     = $Script:PSRepository
-                    Location = $PSGalleryUri
-                    Force    = $true
-                    Trusted  = $True
-                    ForceBootstrap = $True
-                    ProviderName = "PowerShellGet"
+            $PackageSources = Get-PackageSource
+            foreach($source in $PackageSources) {
+                if ($source.Name -eq $Script:PSRepository -or $source.Location -eq $PSGalleryUri -or $source.PublishLocation -eq $PSGalleryPublishUri) {
+                    Unregister-PackageSource -Name $source.Name
                 }
-                Register-PackageSource @source
             }
+
+            $source = @{
+                Name     = $Script:PSRepository
+                Force    = $true
+                Trusted  = $True
+                ForceBootstrap = $True
+            }
+            if (($PSRepository -eq "PSGallery")) {
+                $source["ProviderName"] = "PowerShellGet"
+            } else {
+                if ($PSGalleryUri) {
+                    $source["Location"] = $PSGalleryUri
+                }
+                if ($PSGalleryPublishUri) {
+                    $source["PublishLocation"] = $PSGalleryPublishUri
+                }
+            }
+
+            Register-PackageSource @source
         }
         $publishModuleSplat = @{
             Path        = $PSModuleOutputPath
