@@ -1,18 +1,23 @@
+# NOTE: This script is complicated because it adds mono-repo support to GitVersion
+# We should either rely on `Earthfile` for mono-repo builds, or get a better GitVersion
+# Currently, we only use the full InformationalVersion and MajorMinorPatch (which can be `-split "-"` from it)
 $Script:GitVersionMessagePrefix ??= "semver"
 $Script:GitVersionTagPrefix ??= "v"
 
 Add-BuildTask GitVersion @{
     Inputs  = {
-        # Exclude generated source files in /obj/ folders
+        # Get-ChildItem will not include hidden files like .git
+        # TODO: Exclude generated source files in /obj/ folders, etc
         Get-ChildItem $BuildRoot -Recurse -File
     }
     Outputs = {
         if ($script:BuildSystem -eq "None") {
-            # Locally, we can never skip versioning, because someone could have tagged git
+            # Because git operations like tags change the version without changing source
+            # Locally, we can never skip versioning
             $BuildRoot
         } else {
             # In the build system, run it ONCE PER BUILD PER PROJECT
-            # Use a $TempRoot the build cleans
+            # and copy the output to e a $TempRoot that the build cleans
             $VersionFile = Join-Path $TempRoot -ChildPath "$GitSha.json"
             if (Test-Path $VersionFile) {
                 $script:GitVersion = Get-Content $VersionFile | ConvertFrom-Json
