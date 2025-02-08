@@ -97,7 +97,7 @@ if (!(Get-Module ModuleFast -ListAvailable -ErrorAction SilentlyContinue)) {
     $VersionTag = try { Invoke-WebRequest https://github.com/JustinGrote/ModuleFast/releases/latest -MaximumRedirection 0 } catch { Split-Path -Leaf $_.Exception.Response.Headers.Location.ToString() }
     $zipFile = "ModuleFast.$($VersionTag.Trim('v')).zip"
     $zip = "https://github.com/JustinGrote/ModuleFast/releases/download/$VersionTag/$zipFile"
-    Write-Information "Installing ModuleFast $Version from $zip" -Verbose
+    Write-Information "Installing ModuleFast $VersionTag from $zip" -Verbose
     Invoke-WebRequest $zip -OutFile $zipFile
     Expand-Archive $zipFile -DestinationPath $ModuleDestination
     Remove-Item $zipFile
