@@ -108,10 +108,10 @@ $ModuleFast = @{
 }
 if ($RequiresPath) {
     if ((Split-Path $RequiresPath -Leaf) -eq "RequiredModules.psd1") {
-        Write-Information "Translating RequiredModules.psd1 to Specification"
+        Write-Information "Translating $RequiresPath to Module Specification"
         $Modules = Import-PowerShellDataFile $RequiresPath
-        # Pull a switcheroo
-        $RequiresPath = Join-Path (Split-Path $RequiresPath) "build.requires.psd1"
+        # Careful. It's possible $RequiresPath is in the root: /RequiredModules.psd1 has no parent.
+        $RequiresPath = (Split-Path $RequiresPath) ? (Join-Path (Split-Path $RequiresPath) "build.requires.psd1") : "build.requires.psd1"
         @(
         "@{"
         foreach ($ModuleName in $Modules.Keys) {

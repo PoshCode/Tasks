@@ -13,7 +13,7 @@ Add-BuildTask PSModulePush {
                     Force    = $true
                     Trusted  = $True
                     ForceBootstrap = $True
-                    ProviderName = $PowerShellGet
+                    ProviderName = "PowerShellGet"
                 }
                 Register-PackageSource @source
             }
