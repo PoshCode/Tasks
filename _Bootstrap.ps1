@@ -62,13 +62,8 @@ if (Test-Path $ProjectFile) {
     dotnet restore $ProjectFile --ucr
 }
 
-# If there is a dotnet-tools.json file, restore the tools
-if (Join-Path $pwd .config dotnet-tools.json | Test-Path) {
-    Write-Information "Restore dotnet tools"
-    if (Test-Path $ToolsFile) {
-        dotnet tool restore --tool-manifest $ToolsFile
-    }
-}
+Write-Information "Restore dotnet tools"
+dotnet tool restore --tool-manifest $ToolsFile
 
 # Regardless of whether you have a dotnet-tools.json file, we need gitversion global tool
 # dotnet 8+ can "list" tool names, but this old syntax still works:
