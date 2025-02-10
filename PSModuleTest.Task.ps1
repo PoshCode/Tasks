@@ -2,7 +2,7 @@
     .Synopsis
         Wrap Invoke-Pester for Invoke-Build
     .Description
-        Wrap Invoke-Pester to support RequiredModules specifying the Pester version
+        Wrap Invoke-Pester to determine the Pester version from the required module
         There is a LOT of code here because we are:
         - Handling both Pester 4 and Pester 5, and generating appropriate options for both
         - Getting code coverage requirements, and failing the build (still needed for Pester 4)
@@ -68,9 +68,9 @@ Add-BuildTask PSModuleTest @{
                     $CodeCoveragePercentTarget = $RequiredCodeCoverage
                 }
 
-                # The version of Pester to use (by default, reads RequiredModules and supports 4.x or 5.x)
+                # The version of Pester to use (by default, reads *.requires.psd1 and supports 4.x or 5.x)
                 if (!$PesterVersion) {
-                    $PesterVersion = Get-Item "$Script:BuildRoot${/}RequiredModules.psd1", "$Script:BuildRoot${/}*.requires.psd1", "$PSScriptRoot${/}RequiredModules.psd1", "$PSScriptRoot${/}*.requires.psd1" -ErrorAction SilentlyContinue |
+                    $PesterVersion = Get-Item "$Script:BuildRoot${/}*.requires.psd1", "$PSScriptRoot${/}*.requires.psd1" -ErrorAction SilentlyContinue |
                         Select-Object -First 1 |
                         Import-Metadata |
                         ForEach-Object { $_.Pester -Split "[[,]" } |
