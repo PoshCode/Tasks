@@ -88,7 +88,8 @@ if (Test-Path $HOME/.dotnet/tools) {
 $ModuleDestination = if ($IsWindows) {
     Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'PowerShell/Modules'
 } else {
-    Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'powershell/Modules'
+    # PowerShell on Linux and Mac follows XDG
+    Join-Path $HOME '.local/share/powershell/Modules'
 }
 
 if (!(Get-Module ModuleFast -ListAvailable -ErrorAction SilentlyContinue)) {
