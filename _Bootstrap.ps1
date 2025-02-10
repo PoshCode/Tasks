@@ -112,14 +112,17 @@ if ($RequiresPath) {
         Write-Information "Translating $RequiresPath to Module Specification"
         $Modules = Import-PowerShellDataFile $RequiresPath
         # Careful. It's possible $RequiresPath is in the root: /RequiredModules.psd1 has no parent.
-        $RequiresPath = (Split-Path $RequiresPath) ? (Join-Path (Split-Path $RequiresPath) "build.requires.psd1") : "build.requires.psd1"
+        $NewRequiresPath = (Split-Path $RequiresPath) ? (Join-Path (Split-Path $RequiresPath) "build.requires.psd1") : "build.requires.psd1"
         @(
         "@{"
         foreach ($ModuleName in $Modules.Keys) {
             "    ""$ModuleName"" = "":" + $Modules[$ModuleName] + """"
         }
         "}"
-        ) | Out-File $RequiresPath
+        ) | Out-File $NewRequiresPath
+        # If that worked, we can delete the old file
+        Remove-Item $RequiresPath
+        $RequiresPath = $NewRequiresPath
     }
     $ModuleFast["Path"] = $RequiresPath
 } else {
