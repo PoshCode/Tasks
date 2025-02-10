@@ -3,6 +3,6 @@ Add-BuildTask PSModuleRestore @{
     Inputs  = "$BuildRoot${/}*.requires.psd1" | Convert-Path -ErrorAction ignore
     Outputs = "$OutputRoot${/}*.requires.psd1"
     Jobs    = {
-        Install-ModuleFast -Scope CurrentUser -Path $RequiresPath -Verbose
+        Install-ModuleFast -Scope CurrentUser -Verbose
     }
 }
