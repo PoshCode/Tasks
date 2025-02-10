@@ -25,7 +25,7 @@ param(
     [Alias("RequiredModulesPath")]
     $RequiresPath = (@(@(Join-Path $pwd "*.requires.psd1"
                         Join-Path $pwd "RequiredModules.psd1"
-                    ) | Convert-Path -ErrorAction Ignore)[0]),
+                    ) | Resolve-Path -ErrorAction Ignore)[0].Path),
 
     # Path to a .*proj file or .sln
     # If this file is present, dotnet restore will be run on it.
