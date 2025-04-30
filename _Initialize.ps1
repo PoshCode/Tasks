@@ -38,7 +38,7 @@ ${script:\} = ${script:/} = [IO.Path]::DirectorySeparatorChar
 $Script:RequiredCodeCoverage ??= 0.9
 
 # Our default build configuration is Release (probably only applies to DotNet)
-$script:Configuration ??= "Release"
+$script:Configuration ??= $Env:CONFIGURATION ?? "Release"
 Write-Information "  Configuration: $script:Configuration"
 
 #endregion
@@ -78,27 +78,20 @@ if ($script:BuildSystem -eq "AzureDevops") {
 #>
 
 # There are a few different environment/variables it could be, and then our fallback
-$Script:OutputRoot = $script:OutputRoot ??
-                        $Env:OUTPUT_ROOT ?? # I set this for earthly
-                        $Env:BUILD_BINARIESDIRECTORY ?? # Azure
-                        (Join-Path -Path $BuildRoot -ChildPath 'output')
+# Prefer the environment variable (because earthly uses these)
+# Otherwise, the local $script: variable (my .build.ps1 uses these)
+# Otherwise, the GitHub Workflow and Azure Pipeline environment variables
+# Finally, some calculated default value
+$Script:OutputRoot = $Env:OUTPUT_ROOT ?? $script:OutputRoot ?? $Env:BUILD_BINARIESDIRECTORY ?? (Join-Path -Path $BuildRoot -ChildPath 'output')
 New-Item -Type Directory -Path $OutputRoot -Force | Out-Null
 Write-Information "  OutputRoot: $OutputRoot"
 
-$Script:TestResultsRoot = $script:TestResultsRoot ??
-                            $Env:TEST_ROOT ?? # I set this for earthly
-                            $Env:COMMON_TESTRESULTSDIRECTORY ?? # Azure
-                            $Env:TEST_RESULTS_DIRECTORY ??
-                            (Join-Path -Path $OutputRoot -ChildPath 'tests')
+$Script:TestResultsRoot = $Env:TEST_ROOT ?? $script:TestResultsRoot ?? $Env:COMMON_TESTRESULTSDIRECTORY <# Azure #> ?? $Env:TEST_RESULTS_DIRECTORY <# Github #> ?? (Join-Path -Path $OutputRoot -ChildPath 'tests')
 New-Item -Type Directory -Path $TestResultsRoot -Force | Out-Null
 Write-Information "  TestResultsRoot: $TestResultsRoot"
 
 ### IMPORTANT: Our local TempRoot does not cleaned the way the Azure one does
-$Script:TempRoot = $script:TempRoot ??
-                    $Env:TEMP_ROOT ?? # I set this for earthly
-                    $Env:RUNNER_TEMP ?? # Github
-                    $Env:AGENT_TEMPDIRECTORY ?? # Azure
-                    (Join-Path ($Env:TEMP ?? $Env:TMP ?? "$BuildRoot/Tmp_$(Get-Date -f yyyyMMddThhmmss)") -ChildPath 'InvokeBuild')
+$Script:TempRoot = $Env:TEMP_ROOT ?? $script:TempRoot ?? $Env:RUNNER_TEMP <# Github #> ?? $Env:AGENT_TEMPDIRECTORY <# Azure #> ?? (Join-Path ($Env:TEMP ?? $Env:TMP ?? "$BuildRoot/Tmp_$(Get-Date -f yyyyMMddThhmmss)") -ChildPath 'InvokeBuild')
 New-Item -Type Directory -Path $TempRoot -Force | Out-Null
 Write-Information "  TempRoot: $TempRoot"
 
@@ -168,13 +161,14 @@ if (([bool]$DotNet = $dotnetProjects -or $DotNetPublishRoot)) {
 #endregion
 
 #region PowerShell Module task variables. Find the PowerShell module once.
+$script:PSModuleName ??= $Env:MODULE_NAME
 if ($PSModuleName) {
     Write-Information "Initializing PSModule build variables"
     # We're looking for either a build.psd1 or the module manifest:
     #   ./src/ModuleName.psd1
     #   ./source/ModuleName.psd1
     #   ./ModuleName/ModuleName.psd1
-    if ($PSModuleName -eq "*" -or !$PSModuleSourceRoot -or !$PSModuleName  -or !(Test-Path $PSModuleSourceRoot -PathType Container)) {
+    if ($PSModuleName -eq "*" -or !$PSModuleSourceRoot -or !$PSModuleName -or !(Test-Path $PSModuleSourceRoot -PathType Container)) {
         Write-Information "  Looking for PSModule source"
         # look for a build.psd1 for ModuleBuilder. It should be in the root, but it might be in a subfolder
         if (($BuildModule = Get-ChildItem -Recurse -Filter build.psd1 -ErrorAction Ignore | Select-Object -First 1)) {
@@ -205,10 +199,10 @@ if ($PSModuleName) {
         } else {
             Write-Information "  No build manifest, searching for module source"
             # Look for a module manifest
-            $ModuleManifest = Get-ChildItem "src","source",$PSModuleName,"." -Filter "$PSModuleName.psd1" -File -ErrorAction Ignore |
-                    Where-Object Name -ne "build.psd1" |
-                    Select-Object -First 1 |
-                    Convert-Path
+            $ModuleManifest = Get-ChildItem "src", "source", $PSModuleName, "." -Filter "$PSModuleName.psd1" -File -ErrorAction Ignore |
+                Where-Object Name -ne "build.psd1" |
+                Select-Object -First 1 |
+                Convert-Path
             if (Test-Path $ModuleManifest -PathType Leaf) {
                 Write-Information "  Found PSModule source manifest: $ModuleManifest"
                 $script:PSModuleName = [IO.Path]::GetFileNameWithoutExtension($ModuleManifest)
@@ -258,24 +252,33 @@ $script:PackageNames = $script:PackageNames ?? @(
         @($PSModuleName)
     }
 ) + @(
-    if (!$dotnetProjects -and !$PSModuleName){
+    if (!$dotnetProjects -and !$PSModuleName) {
         "module"
     }
 ) | Select-Object -Unique
 
 ## The first task defined is the default task. Default to build and test.
 if ($PSModuleName -and $dotnetProjects -or $DotNetPublishRoot) {
-    Add-BuildTask Build DotNetRestore, PSModuleRestore, GitVersion, DotNetBuild, DotNetPublish, PSModuleBuild #, PSModuleBuildHelp
+    Add-BuildTask Build @(
+        if ($Clean) { "Clean" }
+        "DotNetRestore", "PSModuleRestore", "GitVersion", "DotNetBuild", "DotNetPublish", "PSModuleBuild" #, PSModuleBuildHelp
+    )
     Add-BuildTask Test Build, DotNetTest, PSModuleAnalyze, PSModuleTest
     Add-BuildTask Pack Test, TagSource, DotNetPack
     Add-BuildTask Push Pack, DotNetPush, PSModulePush
 } elseif ($PSModuleName) {
-    Add-BuildTask Build PSModuleRestore, GitVersion, PSModuleBuild #, PSModuleBuildHelp
+    Add-BuildTask Build @(
+        if ($Clean) { "Clean" }
+        "PSModuleRestore", "GitVersion", "PSModuleBuild" #, PSModuleBuildHelp
+    )
     Add-BuildTask Test Build, PSModuleAnalyze, PSModuleTest
     Add-BuildTask Pack Test, TagSource
     Add-BuildTask Push Pack, PSModulePush
 } elseif ($dotnetProjects) {
-    Add-BuildTask Build DotNetRestore, GitVersion, DotNetBuild, DotNetPublish
+    Add-BuildTask Build @(
+        if ($Clean) { "Clean" }
+        "DotNetRestore", "GitVersion", "DotNetBuild", "DotNetPublish"
+    )
     Add-BuildTask Test Build, DotNetTest
     Add-BuildTask Pack Test, TagSource
     Add-BuildTask Push Pack, DotNetPack, DotNetPush
