@@ -9,7 +9,7 @@ Add-BuildTask DotNetPack @{
         foreach ($project in $dotnetProjects) {
             $Name = Split-Path $project -LeafBase
             if ($GitVersion.$Name) {
-                $options["p"] = "Version=$($GitVersion.$Name.InformationalVersion)"
+                $options["p"] = "Version=$($GitVersion.$Name.FullSemVer)"
             }
 
             Write-Host "Publishing $Name"
