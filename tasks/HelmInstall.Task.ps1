@@ -1,3 +1,4 @@
+# TODO: This task needs to install helm on linux and windows, in CI or in local
 Add-BuildTask HelmInstall @{
     If   = ($script:ChartName -and $script:BuildSystem -ne "None")
     Jobs = {
@@ -16,12 +17,19 @@ Add-BuildTask HelmInstall @{
                 throw "Helm is not installed. Please install Helm: https://helm.sh/docs/intro/install/"
             }
         }
-        Write-Build Gray "Helm version: $(helm version --short)"
+        $HelmVersionShort = helm version --short
+        Write-Build Gray "Helm version: $HelmVersionShort"
 
         # Install helm-schema plugin if not already installed
+        # TODO: This will be a PITA for windows
         if ('schema' -notin (helm plugin list | ForEach-Object { ($_ -split '\t')[0] })) {
-            Write-Build Yellow "helm plugin install https://github.com/dadav/helm-schema --verify=false"
-            helm plugin install https://github.com/dadav/helm-schema --verify=false
+            if ($HelmVersionShort -ilike "v4*") {
+                Write-Build Yellow "helm plugin install https://github.com/dadav/helm-schema --verify=false"
+                helm plugin install https://github.com/dadav/helm-schema --verify=false
+            } else {
+                Write-Build Yellow "helm plugin install https://github.com/dadav/helm-schema"
+                helm plugin install https://github.com/dadav/helm-schema
+            }
         }
     }
 }

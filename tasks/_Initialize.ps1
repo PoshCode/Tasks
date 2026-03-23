@@ -60,6 +60,8 @@ $script:BranchName = if ($Env:BUILD_SOURCEBRANCHNAME) {
     git branch --show-current
 }
 
+$script:PushEnabled ??= $BuildSystem -ne 'None' -and ($BranchName -match "^main|^release/|^hotfix/")
+
 # In PR Builds you have a SourceBranch and a TargetBranch
 [bool]$script:IsPullRequest = $script:IsPullRequest ?? ($Env:BUILD_REASON -eq "PullRequest" -or $Env:DRONE_BUILD_EVENT -eq "pull_request")
 [long]$script:PullRequestId = $script:PullRequestId ?? $Env:SYSTEM_PULLREQUEST_PULLREQUESTID ?? $Env:DRONE_PULL_REQUEST
@@ -98,8 +100,6 @@ Write-Verbose "  BuildRoot [$BuildRoot]" -Verbose
 ### Additionally, these two are cleaned after each Job:
 # $Env:AGENT_TEMPDIRECTORY
 # $Env:COMMON_TESTRESULTSDIRECTORY
-
-# TODO: Should we recreate something similar to the ADO directories described above? e.g. /s, /a, etc
 
 # There are a few different environment/variables it could be, and then our fallback
 $Script:OutputPath = if ($Env:BUILD_BINARIESDIRECTORY) {
@@ -167,7 +167,7 @@ if ($dotnetSolution -or $DotNetPublishRoot) {
     $script:dotnetTestProjects = @($script:dotnetProjects | Where-Object { $_ -like "*Test*.*proj" })
     Write-Verbose "  DotNetTestProjects: $(($script:dotnetTestProjects).Count)" -Verbose
     $script:dotnetOptions ??= @{}
-    
+
     $script:NuGetPublishKey ??= $Env:NUGET_API_KEY
     $script:NuGetPublishUri ??= $Env:NUGET_API_URI ?? "https://nuget.loandepot.com/nuget/LDTS/v3/index.json"
     Write-Verbose "  NuGetPublishUri: $NuGetPublishUri" -Verbose

@@ -16,25 +16,21 @@ Add-BuildTask HelmTestChart @{
             $CompiledOutput = Join-Path $script:helmOutputPath "$($Chart.Name)-compiled.yaml"
 
             Write-Build Yellow "helm lint $($Chart.FullName) --values $TestValues"
-            Invoke-Native { helm lint $chart.FullName --values $TestValues }
-            if ($LASTEXITCODE -ne 0) {
-                throw "Linting failed for $($chart)"
-            }
+            Invoke-Native { helm lint $chart.FullName --values $TestValues } -ExceptionalExit            
 
             Write-Build Yellow "helm template $($chart.FullName) --values $TestValues --generate-name"
-            $global:ErrorView = "ConciseView"
-            Invoke-Native { helm template $chart.FullName--values $TestValues --generate-name
-            } > $CompiledOutput
+            Invoke-Native { helm template $chart.FullName --values $TestValues --generate-name } -ExceptionalExit > $CompiledOutput
 
             # Shouldn't this be taken care of elsewhere as a pre-requisite?
             if (-not (Get-Command kubeconform -ErrorAction SilentlyContinue)) {
                 Write-Build Yellow "kubeconform not found, attempting installation..."
                 &(Join-Path $script:BuildTaskScriptsDirectory "Install-GithubRelease.ps1") -Org "yannh" -Repo "kubeconform" -Verbose -ErrorAction SilentlyContinue
             }
+            # TODO: Why is this here? This should be handled by InstallGithubTools
             Write-Build Yellow "kubeconform -strict -ignore-missing-schemas -schema-location default -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' "-verbose" -output pretty $CompiledOutput"
             Invoke-Native {
                 kubeconform -strict -ignore-missing-schemas -schema-location default -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' "-verbose" -output pretty $CompiledOutput
-            }
+            } -ExceptionalExit
         }
     }
 }

@@ -16,7 +16,7 @@ Add-BuildTask HelmPackChart @{
                 "--app-version", $script:Version.SemVer
             )
             Write-Build Yellow "helm package $($Chart.FullName) $($options -join ' ')"
-            helm package $Chart.FullName @options
+            Invoke-Native { helm package $Chart.FullName @options } -ExceptionalExit
         }
     }
 }
