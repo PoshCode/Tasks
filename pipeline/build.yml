@@ -7,11 +7,39 @@ trigger:
 pr:
 - main
 
-jobs:
-  - job: build
-    displayName: Build starters
-    steps:
-    - checkout: self
-      persistCredentials: "true" # required for pushing tags
-      fetchDepth: "0" # required for gitversion
+resources:
+  repositories:
+  - repository: BuildTasks
+    type: github
+    name: loandepot/LD.Platform.BuildTasks
+    endpoint: loandepot
+    ref: curley/LDDO-2556
+    fetchDepth: 1
 
+jobs:
+- job: build
+  displayName: Build starters
+  workspace:
+    clean: all
+  steps:
+  - checkout: self
+    persistCredentials: "true" # required for pushing tags
+    fetchDepth: "0" # required for gitversion
+  - checkout: BuildTasks
+    path: s/BuildTasks
+  - pwsh: |
+      . $(Pipeline.Workspace)/$(buildTasksPath)/scripts/Bootstrap.ps1
+    displayName: 'Bootstrap'
+
+  - pwsh: |
+      Invoke-Build Get-Version
+    workingDirectory: $(Pipeline.Workspace)/$(repoPath)
+    displayName: 'Get-Version'
+
+  - pwsh: |
+      Invoke-Build Tag-Source
+    workingDirectory: $(Pipeline.Workspace)/$(repoPath)
+    displayName: 'Tag-Source'
+    condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
+    env:
+      XDG_CONFIG_HOME: /home/AzDevOps/.config

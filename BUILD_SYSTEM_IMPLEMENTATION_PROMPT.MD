@@ -229,9 +229,6 @@ param(
     [Parameter(Position = 0)]
     [string]$Solution = "*",
 
-    # The Key to use for reporting to SonarQube
-    [string]$SonarProjectKey = $($Solution -ne "*" ? $Solution : ""),
-
     # [string[]]$MonoRepoVersionNames = @(""),
 
     # Which projects to build
@@ -732,7 +729,6 @@ CI Task:
   └─ DotNetBuild
       └─ DotNetRestore
       └─ GetVersion
-      └─ SonarQubeStart (if configured)
   └─ DotNetTest
   └─ DotNetTrx2JUnit
   └─ ReportGenerator

@@ -2,8 +2,10 @@
   <PropertyGroup>
     <SolutionName Condition="'$(SolutionName)' == ''">shared</SolutionName>
 
-    <RootOutputPath Condition="'$(LDBUILD_BINARIESDIRECTORY)' == ''">$(MSBuildThisFileDirectory)Output/$(SolutionName)/</RootOutputPath>
-    <RootOutputPath Condition="'$(LDBUILD_BINARIESDIRECTORY)' != ''">$(LDBUILD_BINARIESDIRECTORY)/$(SolutionName)/</RootOutputPath>
+    <RootOutputPath Condition="'$(LDBUILD_OUTPUT_ROOT)' == ''">
+      $(MSBuildThisFileDirectory)Output/$(SolutionName)/</RootOutputPath>
+    <RootOutputPath Condition="'$(LDBUILD_OUTPUT_ROOT)' != ''">
+      $(LDBUILD_OUTPUT_ROOT)/$(SolutionName)/</RootOutputPath>
 
     <BaseOutputPath>$(RootOutputPath)bin/$(MSBuildProjectName)</BaseOutputPath>
     <BaseIntermediateOutputPath>$(RootOutputPath)obj/$(MSBuildProjectName)</BaseIntermediateOutputPath>
@@ -15,7 +17,7 @@
 
     <IsPackable>False</IsPackable>
     <IsPublishable>False</IsPublishable>
-    
+
     <RunSettingsFilePath>$(MSBuildThisFileDirectory)\.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 </Project>

@@ -1,0 +1,1 @@
+Add-BuildTask Install-BuildDependencies Install-RequiredModules
