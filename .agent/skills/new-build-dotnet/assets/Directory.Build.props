@@ -1,0 +1,45 @@
+<Project>
+  <!--
+      Environment variables can be used to override this configuration:
+      LDBUILD_OUTPUT_ROOT as a default RootOutputPath
+      LDBUILD_TARGET_RUNTIME as a default RuntimeIdentifier (for containerization)
+    -->
+  <PropertyGroup>
+    <!-- Common Metadata -->
+    <Authors>devops@loandepot.com</Authors>
+    <Company>loanDepot</Company>
+
+    <!-- The SolutionName needs a default value because it's used in the RootOutputPath. -->
+    <SolutionName Condition="'$(SolutionName)' == ''">_</SolutionName>
+    <RootOutputPath Condition="'$(LDBUILD_OUTPUT_ROOT)' == ''">
+      $(MSBuildThisFileDirectory)Output/$(SolutionName)/</RootOutputPath>
+    <!--
+      DO NOT CHANGE THESE OUTPUT PATHS CONTROLLED BY LDBUILD_OUTPUT_ROOT
+      THE RELATIVE SUBDIRECTORIES ARE CONVENTIONS USED BY THE BUILD PIPELINES
+    -->
+    <RootOutputPath Condition="'$(LDBUILD_OUTPUT_ROOT)' != ''">
+      $([MSBuild]::EnsureTrailingSlash($(LDBUILD_OUTPUT_ROOT)))$(SolutionName)/</RootOutputPath>
+    <BaseOutputPath>$(RootOutputPath)bin/$(MSBuildProjectName)</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(RootOutputPath)obj/$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <PublishDir>$(RootOutputPath)publish/$(MSBuildProjectName)</PublishDir>
+    <ContainerArchiveDir>$(RootOutputPath)containers/</ContainerArchiveDir>
+
+    <!-- Supports setting the runtime identifier without passing it explicitly to each build -->
+    <RuntimeIdentifier Condition="'$(LDBUILD_TARGET_RUNTIME)' != ''">$(LDBUILD_TARGET_RUNTIME)</RuntimeIdentifier>
+    <ContainerRuntimeIdentifier>$(RuntimeIdentifier)</ContainerRuntimeIdentifier>
+    <ShouldUnsetParentConfigurationAndPlatform>false</ShouldUnsetParentConfigurationAndPlatform>
+
+    <!-- Default settings for container images -->
+    <ContainerBaseImage>crazusw2dvosl1.azurecr.io/dotnet/aspnet:8.0</ContainerBaseImage>
+    <ContainerRegistry>crazusw2dvosl1.azurecr.io</ContainerRegistry>
+    <ContainerWorkingDirectory>/app/</ContainerWorkingDirectory>
+    <PackageProjectUrl>https://github.com/loandepot/LD.EnterprisePlatformServices.API</PackageProjectUrl>
+
+    <RunSettingsFilePath>$(MSBuildThisFileDirectory)\.runsettings</RunSettingsFilePath>
+
+    <!-- Default Packable/Publishable to false because we can pack/publish the whole solution -->
+    <!-- Each project that needs to be packable/publishable should override these values -->
+    <IsPackable>False</IsPackable>
+    <IsPublishable>False</IsPublishable>
+  </PropertyGroup>
+</Project>
