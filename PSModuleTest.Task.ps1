@@ -23,15 +23,15 @@ Add-BuildTask PSModuleTest @{
         if ($Clean) {
             $BuildRoot # guaranteed to be old
         } else {
-            "$TestResultsRoot${/}TestResults.xml"
+            "$TestResultsRoot${/}$PSModuleName-results.xml"
         }
     }
     Jobs    = "PSModuleImport", {
-            $PSModuleTestPath ??= "$BuildRoot${/}[Tt]ests"
-            # The output path, by convention: TestResults.xml in your output folder
-            $TestResultOutputPath ??= Join-Path $TestResultsRoot "TestResult.xml"
+        $PSModuleTestPath ??= "$BuildRoot${/}[Tt]ests"
+        # The output path, by convention: TestResults.xml in your output folder
+        $TestResultOutputPath ??= Join-Path $TestResultsRoot "$PSModuleName-results.xml"
 
-            $PesterFilter ??= if ($BuildSystem -ne "None") { @{ "ExcludeTag" = 'NoCI' } }
+        $PesterFilter ??= if ($BuildSystem -ne "None") { @{ "ExcludeTag" = 'NoCI' } }
 
 
         $Version = $GitVersion.$PSModuleName.MajorMinorPatch
@@ -64,7 +64,7 @@ Add-BuildTask PSModuleTest @{
 
                 if ($Script:RequiredCodeCoverage -gt 0.00) {
                     $CodeCoveragePath = $PSModuleManifestPath
-                    $CodeCoverageOutputPath = "$TestResultsRoot${/}coverage.xml"
+                    $CodeCoverageOutputPath = "$TestResultsRoot${/}$PSModuleName-coverage.xml"
                     $CodeCoveragePercentTarget = $RequiredCodeCoverage
                 }
 

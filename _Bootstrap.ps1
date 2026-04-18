@@ -14,8 +14,8 @@ param(
     [switch]$Force,
 
     # I require dotnet, and git version
-    # Defaults to the "7.0" channel, change it to change the minimum version
-    [double]$DotNet = "7.0",
+    # Defaults to the "10.0" channel, change it to change the minimum version
+    [double]$DotNet = "10.0",
 
     # Path to a file listing required PowerShell modules.
     # See also: https://github.com/marketplace/actions/modulefast#requiresspec
@@ -24,16 +24,24 @@ param(
     # NOTE: If this file is missing, we'll still install InvokeBuild, but if you have a requires spec, don't forget to include InvokeBuild in it!
     [Alias("RequiredModulesPath")]
     $RequiresPath = (@(@(Join-Path $pwd "*.requires.psd1"
-                        Join-Path $pwd "RequiredModules.psd1"
-                    ) | Resolve-Path -ErrorAction Ignore)[0].Path),
+                Join-Path $pwd "RequiredModules.psd1"
+            ) | Resolve-Path -ErrorAction Ignore)[0].Path),
 
-    # Path to a .*proj file or .sln
-    # If this file is present, dotnet restore will be run on it.
-    $ProjectFile = (Join-Path $pwd "*.*proj"),
+    $ToolsFile = (@(
+            Join-Path $pwd "dotnet-tools.json"
+            Join-Path $pwd ".config" "dotnet-tools.json"
+            Join-Path $PSScriptRoot "dotnet-tools.json"
+            Join-Path $PSScriptRoot ".config" "dotnet-tools.json"
+        ) | Resolve-Path -ErrorAction Ignore)[0].Path),
 
-    # Scope for installation (of scripts and modules). Defaults to CurrentUser
-    [ValidateSet("AllUsers", "CurrentUser")]
-    $Scope = "CurrentUser"
+
+# Path to a .*proj file or .sln
+# If this file is present, dotnet restore will be run on it.
+$ProjectFile = (Join-Path $pwd "*.*proj"),
+
+# Scope for installation (of scripts and modules). Defaults to CurrentUser
+[ValidateSet("AllUsers", "CurrentUser")]
+$Scope = "CurrentUser"
 )
 $InformationPreference = "Continue"
 $ErrorView = 'DetailedView'
@@ -45,11 +53,11 @@ if (!((Get-Command dotnet -ErrorAction SilentlyContinue) -and ([semver](dotnet -
     Write-Host "This script can call dotnet-install to install a local copy of dotnet $DotNet -- if you'd rather install it yourself, answer no:"
     if (!$IsLinux -and !$IsMacOS) {
         Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile bootstrap-dotnet-install.ps1
-        .\bootstrap-dotnet-install.ps1 -Channel $DotNet -InstallDir $HOME\.dotnet
+        ./bootstrap-dotnet-install.ps1 -Channel "$DotNet" -InstallDir $HOME/.dotnet
     } else {
         Invoke-WebRequest https://dot.net/v1/dotnet-install.sh -OutFile bootstrap-dotnet-install.sh
         chmod +x bootstrap-dotnet-install.sh
-        ./bootstrap-dotnet-install.sh --channel $DotNet --install-dir $HOME/.dotnet
+        ./bootstrap-dotnet-install.sh --channel "$DotNet" --install-dir $HOME/.dotnet
     }
     if (!((Get-Command dotnet -ErrorAction SilentlyContinue) -and ([semver](dotnet --version) -gt $DotNet))) {
         throw "Unable to find dotnet $DotNet or later"
@@ -58,26 +66,21 @@ if (!((Get-Command dotnet -ErrorAction SilentlyContinue) -and ([semver](dotnet -
 
 if (Test-Path $ProjectFile) {
     Write-Information "Ensure dotnet package dependencies"
-    split-path $ProjectFile -Parent | push-location
+    Split-Path $ProjectFile -Parent | Push-Location
     dotnet restore $ProjectFile --ucr
 }
 
-Write-Information "Restore dotnet tools"
-dotnet tool restore --tool-manifest $ToolsFile
+if ($ToolsFile -and (Test-Path $ToolsFile)) {
+    Write-Information "Ensure dotnet tools from $ToolsFile"
+    dotnet tool restore --tool-manifest $ToolsFile
+}
 
-# Regardless of whether you have a dotnet-tools.json file, we need gitversion global tool
-# dotnet 8+ can "list" tool names, but this old syntax still works:
-if (!(dotnet tool list -g | Select-String "gitversion.tool")) {
+# Regardless of whether you already have a dotnet-tools.json file, we need gitversion.tool
+if (!(dotnet tool list gitversion.tool)) {
     Write-Information "Ensure GitVersion.tool"
-    # We need gitversion 5.x (the new 6.x version will not support SemVer 1 that PowerShell still uses)
-    dotnet tool update gitversion.tool --version 5.* --global
+    dotnet tool install gitversion.tool
 }
 
-if (Test-Path $HOME/.dotnet/tools) {
-    Write-Information "Ensure dotnet global tools in PATH"
-    # TODO: implement semi-permanent PATH modification for github and azure
-    $ENV:PATH += ([IO.Path]::PathSeparator) + (Convert-Path $HOME/.dotnet/tools)
-}
 
 # I don't want ModuleFast messing with the PSModulePath so we use the default user location
 $ModuleDestination = if ($IsWindows) {
