@@ -1,45 +1,11 @@
-# Opinionated Build Tasks for Invoke-Build
+# LD.Platform.BuildTasks
 
-- Requires PowerShell 7.2 or later.
-- Should work with any module from my [PowerShellTemplate](/jaykul/PowerShellTemplate).
+## TODO
 
-I've started using Invoke-Build to run my builds in PowerShell (due mostly to unhappiness with GitHub and Azure Pipelines).
-This is a collection of tasks I've written that get shared by all my project builds.
-
-## Usage
-
-Your .build.ps1 script _must_ set variables:
-
-### For PowerShell modules
-
-- `$PSModuleName`
-    - The name of the module you're building.
-    - There **must** be a .psd1 module manifest with this name in your source.
-    - The build will create a folder with this name in the output folder
-
-If you're including building a dotnet project, it's also recommended to set
-
-- `$DotNetPublishRoot`
-    - The target folder for dotnet publish.
-    - Defaults to `$OutputRoot/publish`
-    - For PowerShell modules, I always override this to `$BuildRoot/lib` and add that to the `CopyDirectories` list
-      in my ModuleBuilder `build.psd1` so that it gets copied to the output folder by ModuleBuilder.
-
-### For DotNet assemblies
-
-- `$dotnetProjects`
-    - Specifies which projects to build
-    - I recommend you put this as a parameter on your Build.ps1
-        - Set the default to the full list of your assembly projects
-        - Add an alias: "Projects"
-- `$dotnetTestProjects`
-    - Specifies which projects are test projects
-    - I recommend you put this as a parameter on your Build.ps1
-    - Add an alias: "TestProjects"
-- `$dotnetOptions`
-    - Specifies further options to pass to dotnet
-    - I recommend you put this as a parameter on your Build.ps1
-    - Add an alias: "Options"
-    - Example values:
-        "-verbosity" = "minimal"
-        "-runtime" = "linux-x64"
+- [ ] Yeah, I think one other thing we need to do before we try to turn this into a "process" is we need to clean up our tasks to use exec (or our Invoke-Native command) so that when the native tools fail, the build fails. (See Invoke-Build Basics and Guidelines)
+- [ x ] CSC : error CS5001: Program does not contain a static 'Main' method suitable for an entry point [C:\XDL\LD.Shared.EnterprisePlatformServices.API\EPS\ThirdParty\LD.EPS.ThirdParty.Calyx\LD.EPS.ThirdParty.Calyx.csproj]
+- [ x ] what are we going to do about dotnet-tools.json? 
+    - [ x ] Copy the file to the build root
+- [ x ] Use a solution filter to filter out test projects that trying to publish because they're using microsoft.net.sdk.web 
+    - [ ] ACTUALLY use dotnet sln remove to exclude them from the build and then add them back after the task completes
+- [ ] How do I handle tasks for publishing to ACR vs universal package proget

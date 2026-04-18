@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <SolutionName Condition="'$(SolutionName)' == ''">shared</SolutionName>
+
+    <RootOutputPath Condition="'$(LDBUILD_BINARIESDIRECTORY)' == ''">$(MSBuildThisFileDirectory)Output/$(SolutionName)/</RootOutputPath>
+    <RootOutputPath Condition="'$(LDBUILD_BINARIESDIRECTORY)' != ''">$(LDBUILD_BINARIESDIRECTORY)/$(SolutionName)/</RootOutputPath>
+
+    <BaseOutputPath>$(RootOutputPath)bin/$(MSBuildProjectName)</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(RootOutputPath)obj/$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <PublishDir>$(RootOutputPath)publish/$(MSBuildProjectName)</PublishDir>
+    <!-- <RuntimeIdentifier>linux-x64</RuntimeIdentifier> -->
+    <!-- <AppendRuntimeIdentifierToOutputPath>False</AppendRuntimeIdentifierToOutputPath> -->
+    <RuntimeIdentifier Condition="'$(LDBUILD_TARGET_RUNTIME)' != ''">$(LDBUILD_TARGET_RUNTIME)</RuntimeIdentifier>
+    <IsPackable>False</IsPackable>
+    <IsPublishable>False</IsPublishable>
+  </PropertyGroup>
+</Project>
