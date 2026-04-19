@@ -1,0 +1,17 @@
+# Docs: https://aka.ms/yaml
+name: $(GitVersion.SemVer)
+pool: LDLinux
+
+trigger:
+- main
+pr:
+- main
+
+jobs:
+  - job: build
+    displayName: Build starters
+    steps:
+    - checkout: self
+      persistCredentials: "true" # required for pushing tags
+      fetchDepth: "0" # required for gitversion
+
