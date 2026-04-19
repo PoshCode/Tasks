@@ -1,5 +1,44 @@
 # Monorepo Build System Implementation Guide
 
+## Table of Contents
+
+- [Context and Purpose](#context-and-purpose)
+- [Prerequisites](#prerequisites)
+- [Implementation Guidance](#implementation-guidance)
+- [Implementation Steps](#implementation-steps)
+  - [Step 0: Create or Merge Root Directory.Build.props](#step-0-create-or-merge-root-directorybuildprops)
+  - [Step 0a: Update .gitignore to Exclude Output Directory](#step-0a-update-gitignore-to-exclude-output-directory)
+  - [Step 0b: Create Root build.build.ps1 (If Not Present)](#step-0b-create-root-buildbuildps1-if-not-present)
+  - [Step 1: Analyze Repository Structure](#step-1-analyze-repository-structure)
+  - [Step 2: Create Root-Level Solution Files](#step-2-create-root-level-solution-files)
+  - [Step 3: Delete Original Subdirectory Solution Files](#step-3-delete-original-subdirectory-solution-files)
+  - [Step 4: Update Subdirectory Directory.Build.props Files](#step-4-update-subdirectory-directorybuildprops-files)
+  - [Step 5: Mark Projects as Publishable](#step-5-mark-projects-as-publishable)
+  - [Step 6: Simplify Dockerfiles for Publishable Projects](#step-6-simplify-dockerfiles-for-publishable-projects)
+  - [Step 7: Test the Build System](#step-7-test-the-build-system)
+- [Key Concepts and Rationale](#key-concepts-and-rationale)
+  - [Why Move Solutions to Root?](#why-move-solutions-to-root)
+  - [Output Directory Structure](#output-directory-structure)
+  - [GitVersion Integration](#gitversion-integration)
+  - [IsPackable vs IsPublishable](#ispackable-vs-ispublishable)
+  - [Invoke-Build Task Dependencies](#invoke-build-task-dependencies)
+- [Troubleshooting: Edge Cases and Complex Scenarios](#troubleshooting-edge-cases-and-complex-scenarios)
+  - [Edge Case 1: SpecRun Path Handling with Centralized Output](#edge-case-1-specrun-path-handling-with-centralized-output)
+  - [Edge Case 2: Package Downgrade Errors from Legacy Dependencies](#edge-case-2-package-downgrade-errors-from-legacy-dependencies)
+  - [Edge Case 3: Understanding NuGet Dependency Resolution](#edge-case-3-understanding-nuget-dependency-resolution)
+  - [Edge Case 4: Package Source Mapping Required with Central Package Management](#edge-case-4-package-source-mapping-required-with-central-package-management)
+  - [Edge Case 5: System* Package Compatibility](#edge-case-5-system-package-compatibility)
+  - [Recommendations for Preventing Edge Cases](#recommendations-for-preventing-edge-cases)
+- [Common Issues and Solutions](#common-issues-and-solutions)
+  - [Issue: Build cannot find projects](#issue-build-cannot-find-projects)
+  - [Issue: Output directory conflicts](#issue-output-directory-conflicts)
+  - [Issue: GitVersion fails](#issue-gitversion-fails)
+  - [Issue: Projects not inheriting root Directory.Build.props](#issue-projects-not-inheriting-root-directorybuildprops)
+  - [Issue: Test projects being packed or published](#issue-test-projects-being-packed-or-published)
+  - [Issue: NU1507 errors with Central Package Management](#issue-nu1507-errors-with-central-package-management)
+- [Validation Checklist](#validation-checklist)
+- [Summary](#summary)
+
 ## Context and Purpose
 
 This document provides comprehensive instructions for implementing a standardized Invoke-Build monorepo build system in .NET repositories. The build system consolidates multiple solution files from subdirectories into root-level solution files, implements centralized output management, and provides automated versioning with GitVersion.
@@ -416,13 +455,25 @@ After:
 </Project>
 ```
 
-### Step 5: Mark Projects as Publishable or Packable
+### Step 5: Mark Projects as Publishable
 
-**Action:** Update .csproj files to explicitly declare their packaging/publishing intent.
+**Action:** Update .csproj files to explicitly declare their publishing intent.
 
 **Instructions:**
 
-1. **For projects that should be published** (web applications, services, executables):
+**IMPORTANT:** 
+- **Do NOT add `<IsPackable>true</IsPackable>` to any .csproj files.** There is no deterministic way to identify which projects should be packable. Developers must manually add `<IsPackable>true</IsPackable>` to library projects that need to be packed as NuGet packages **before** running this build system implementation.
+- Only add `<IsPublishable>True</IsPublishable>` to projects that need to be published as deployment artifacts.
+- Add `<IsTestProject>true</IsTestProject>` to all test projects.
+
+1. **For test projects:**
+   - Add `<IsTestProject>true</IsTestProject>` to the main `<PropertyGroup>`
+   - These are typically projects with:
+     - Names containing "Test", "Tests", or "Spec" (e.g., `Tests.LD.EPS.Common`, `LD.EPS.Core.Api.Tests`)
+     - References to test frameworks (xUnit, NUnit, MSTest, SpecFlow, etc.)
+     - Package references like `Microsoft.NET.Test.Sdk`, `xunit`, `NUnit`, `MSTest.TestFramework`
+
+2. **For projects that should be published** (web applications, services, executables):
    - Add `<IsPublishable>True</IsPublishable>` to the main `<PropertyGroup>`
    - These are typically projects with:
      - `<Project Sdk="Microsoft.NET.Sdk.Web">`
@@ -430,15 +481,13 @@ After:
      - Entry points (Program.cs with Main method)
      - Service hosts
 
-2. **For projects that should be packed as NuGet packages** (libraries, shared code):
-   - Add `<IsPackable>True</IsPackable>` to the main `<PropertyGroup>`
-   - These are typically projects with:
-     - `<Project Sdk="Microsoft.NET.Sdk">`
-     - Reusable library code
-     - No entry point
+3. **For projects that should not be published or tested** (libraries, internal utilities):
+   - No changes needed - the root `Directory.Build.props` sets both `IsPublishable` and `IsTestProject` to `False` by default
 
-3. **For projects that should not be published or packed** (test projects, internal utilities):
-   - No changes needed - the root `Directory.Build.props` sets both to `False` by default
+**Note on IsPackable:**
+- The root `Directory.Build.props` sets `<IsPackable>False</IsPackable>` by default for all projects
+- Developers must manually identify and mark library projects with `<IsPackable>true</IsPackable>` if they need to be packed as NuGet packages
+- This step does NOT handle `IsPackable` configuration
 
 **Example Changes:**
 
@@ -451,16 +500,6 @@ For a web service project (`LD.JV.BuilderAsync.Host.Messaging.csproj`):
     <UserSecretsId>2318815b-a78c-420b-80db-571a264a2cf9</UserSecretsId>
     <IsPublishable>True</IsPublishable>  <!-- ADD THIS LINE -->
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-</PropertyGroup>
-```
-
-For a library project (`LD.JV.PlatformEvent.Internal.csproj`):
-```xml
-<PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <IsPackable>True</IsPackable>  <!-- ADD THIS LINE -->
 </PropertyGroup>
 ```
 

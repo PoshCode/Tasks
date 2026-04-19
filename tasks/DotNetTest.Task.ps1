@@ -19,10 +19,7 @@ Add-BuildTask DotNetTest @{
         
         if ($TrxFiles) {
             $TrxFiles | Select-Object -ExpandProperty FullName
-        } else {
-            # Return a placeholder path so Outputs is not empty (file doesn't exist yet, so task will run)
-            Join-Path $TestResultsRoot "test-results.trx"
-        }
+        } else { $BuildRoot }
     }
     Jobs    = "DotNetBuild", {
         
@@ -40,12 +37,11 @@ Add-BuildTask DotNetTest @{
             }
             $Command += " -p:SolutionName=$dotnetSolutionName"
             $Name = (Split-Path $dotnetSolution -LeafBase).ToLower()
-            Write-Build Gray "dotnet coverage collect '$Command' --output '$TestResultsRoot/coverage/$Name.xml' --output-format xml"
+            Write-Build Yellow "dotnet coverage collect '$Command' --output '$TestResultsRoot/coverage/$Name.xml' --output-format xml"
             dotnet coverage collect $Command --output "$TestResultsRoot/coverage/$Name.xml" --output-format xml
         } else {
-            Write-Build Gray "dotnet test $dotnetSolution --no-build $(($options.GetEnumerator().ForEach({"-$($_.key) $($_.value)"})) -join ' ') -p:SolutionName=$dotnetSolutionName"
-            dotnet test $dotnetSolution --no-build @options "-p:SolutionName=$dotnetSolutionName"
+            Write-Build Yellow "dotnet test $dotnetSolution --no-build $(($options.GetEnumerator().ForEach({"-$($_.key) $($_.value)"})) -join ' ')"
+            dotnet test $dotnetSolution --no-build @options
         }
-        
-    }, "SonarQubeEnd", "DotNetTrx2JUnit"
+    }, "DotNetTrx2JUnit"
 }

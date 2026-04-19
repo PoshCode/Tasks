@@ -1,5 +1,9 @@
 Add-BuildTask DotNetTrx2JUnit @{
-    If      = (dotnet tool list trx2junit --format json | ConvertFrom-Json).data
+    If      = if ($script:TargetFramework -eq "net8.0") { 
+        dotnet tool list trx2junit | Select-Object -Skip 2
+    } else { 
+        (dotnet tool list trx2junit --format json | ConvertFrom-Json).data
+    }
     Partial = $true
     Input   = {
         Get-ChildItem $TestResultsRoot/*.trx
@@ -10,8 +14,8 @@ Add-BuildTask DotNetTrx2JUnit @{
         }
     }
     Jobs    = {
-        process {
-            dotnet trx2junit $_
-        }
+        Get-ChildItem $TestResultsRoot/*.trx | ForEach-Object -ThrottleLimit ([Environment]::ProcessorCount - 1) -Parallel { 
+            dotnet trx2junit $_ | Select-String -Pattern "Converting\s'" 
+        } 
     }
 }

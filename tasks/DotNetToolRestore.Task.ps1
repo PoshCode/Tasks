@@ -5,7 +5,8 @@ Add-BuildTask DotNetToolRestore @{
             Join-Path $BuildRoot dotnet-tools.json
         ) | Resolve-Path -ErrorAction Ignore | Select-Object -First 1
         if (-not $DotNetToolManifest) {
-            Copy-Item "$PSScriptRoot/../dotnet-tools.json" "$BuildRoot/.config/dotnet-tools.json" -Force 
+            New-Item -ItemType Directory -Path "$BuildRoot/.config" -Force -ErrorAction Ignore
+            Copy-Item "$PSScriptRoot/../dotnet-tools.json" "$BuildRoot/.config/dotnet-tools.json" -Force
         }
         dotnet tool restore
     }

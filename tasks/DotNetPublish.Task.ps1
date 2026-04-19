@@ -11,12 +11,13 @@ Add-BuildTask DotNetPublish @{
             # that explicitly set IsPublishable=true should be published
             $Content = Get-Content $Proj -Raw -ErrorAction SilentlyContinue
             if ($Content -imatch '<IsPublishable>\s*true\s*</IsPublishable>') {
-                $DllPath = Join-Path $script:OutputPath "bin/$ProjectName/$script:Configuration/$script:TargetFramework/$script:TargetRuntime/$ProjectName.dll"
+                $DllPath = Join-Path $script:dotnetOutputPath "bin/$ProjectName/$script:Configuration/$script:TargetFramework/$script:TargetRuntime/$ProjectName.dll"
                 if (Test-Path $DllPath) { $DllPath }
             }
         }
     }
     Outputs = {
+        # TODO: This is rerunning every time. Need to figure out why.
         $Projects = $dotnetProjects | ForEach-Object { Join-Path (Split-Path $dotnetSolution) $_ }
         foreach ($Proj in $Projects) {
             $ProjectName = Split-Path $Proj -LeafBase
@@ -29,10 +30,7 @@ Add-BuildTask DotNetPublish @{
                 
                 if ($ExistingPublish) {
                     $ExistingPublish.FullName
-                } else {
-                    # Return a placeholder path so Outputs is not empty (file doesn't exist yet, so task will run)
-                    $PublishedDll
-                }
+                } else { $BuildRoot }
             }
         }
     }
@@ -62,8 +60,8 @@ Add-BuildTask DotNetPublish @{
         }
 
         Set-Location (Split-Path $dotnetSolution)
-        Write-Build Gray "dotnet publish $dotnetSolution --no-build --no-restore $(($options.GetEnumerator().ForEach({"-$($_.key) $($_.value)"})) -join ' ') -p:SolutionName=$dotNetSolutionName"
-        dotnet publish $dotnetSolution --no-build --no-restore @options "-p:SolutionName=$dotNetSolutionName"
+        Write-Build Yellow "dotnet publish $dotnetSolution --no-build --no-restore $(($options.GetEnumerator().ForEach({"-$($_.key) $($_.value)"})) -join ' ')"
+        dotnet publish $dotnetSolution --no-build --no-restore @options
     },{
         if ($script:ProjectsToIgnore.Count -gt 0) {
             dotnet sln $dotnetSolution add $script:ProjectsToIgnore

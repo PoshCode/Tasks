@@ -15,7 +15,7 @@ Add-BuildTask GetVersion @{
         # we can skip (return $false)
         return (${script:Version}.Sha -ne $head)
     }
-    Jobs = "InstallGitVersion", "GitInit", {
+    Jobs = "GitInit", "DotNetToolRestore", {
         # Support a config file in the repo (BuildRoot) to override the one in here (PSScriptRoot)
         [string]$VersionConfig = Resolve-Path "$BuildRoot/GitVersion.y*ml", "$PSScriptRoot/GitVersion.y*ml" -ErrorAction Ignore
         | Select-Object -First 1

@@ -11,17 +11,26 @@ Add-BuildTask DotNetBuild @{
                 Where-Object FullName -NotMatch "[\\/]obj[\\/]|[\\/]bin[\\/]"
         }
     }
-    Outputs = {        
+    Outputs = {    
+        # TODO: In harness this is rerunning every time. Need to figure out why.
         $Projects = $dotnetProjects | ForEach-Object { Join-Path (Split-Path $dotnetSolution) $_ }
         
         # Return corresponding DLL files in OutputPath bin directory
         foreach ($Proj in $Projects) {
             $ProjectName = [IO.Path]::GetFileNameWithoutExtension($Proj)
-            $DllPath = Join-Path $script:OutputPath "bin/$ProjectName/$script:Configuration/$script:TargetFramework/$script:TargetRuntime/$ProjectName.dll"
+            
+            # linux edge case where csproj name does not match the dll name (case sensitivity)
+            $AssemblyName = $ProjectName
+            $Content = Get-Content $Proj -Raw -ErrorAction SilentlyContinue
+            if ($Content -match '<AssemblyName>([^<]+)</AssemblyName>') {
+                $AssemblyName = $Matches[1]
+            }
+            
+            $DllPath = Join-Path $script:dotnetOutputPath "bin/$ProjectName/$script:Configuration/$script:TargetFramework/$script:TargetRuntime/$AssemblyName.dll"
             $DllPath
         }
     }
-    Jobs    = "DotNetRestore", "GetVersion", "SonarQubeStart", {
+    Jobs    = "DotNetRestore", "GetVersion", {
         $Name = (Split-Path $dotnetSolution -LeafBase).ToLower()
         
         $local:options = @{
@@ -34,16 +43,9 @@ Add-BuildTask DotNetBuild @{
             $options["p"] = "Version=$(${script:Version}.InformationalVersion)"
         }
         
-        # Pass SolutionName so Directory.Build.props can calculate correct paths (I think?)
-        $SolutionName = if ($dotnetSolution -match '\.sln') {
-            Split-Path $dotnetSolution -LeafBase
-        } else {
-            "shared"
-        }
-        
-        Write-Build Gray "dotnet build $dotnetSolution --no-restore $(($options.GetEnumerator().ForEach({"-$($_.key) $($_.value)"})) -join ' ') -p:SolutionName=$SolutionName"
+        Write-Build Yellow "dotnet build $dotnetSolution --no-restore $(($options.GetEnumerator().ForEach({"-$($_.key) $($_.value)"})) -join ' ')"
         # Invoke-BuildExec [-Command] ScriptBlock [[-ExitCode] Int32[]] [[-ErrorMessage] String] [-Echo] [-StdErr]
         
-        dotnet build $dotnetSolution --no-restore @options "-p:SolutionName=$SolutionName"
+        dotnet build $dotnetSolution --no-restore @options
     }
 }

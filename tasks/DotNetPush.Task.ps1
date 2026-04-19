@@ -5,10 +5,10 @@ Add-BuildTask DotNetPush @{
         $Package = Get-ChildItem $script:DotNetPackRoot -Recurse -Filter "*.nupkg"
 
         if ($BuildSystem -ne 'None' -and
-            $BranchName -in "master", "main" -or $BranchName -match "\brelease\b" -and
+            $BranchName -in "master", "main" -or $BranchName -like "release*" -or $BranchName -like "hotfix*" -and
             -not [string]::IsNullOrWhiteSpace($NuGetPublishKey)) {
             foreach ($nupkg in $Package) {
-                Write-Build Gray "dotnet nuget push $nupkg --api-key $NuGetPublishKey --source $NuGetPublishUri"
+                Write-Build Yellow "dotnet nuget push $nupkg --api-key $NuGetPublishKey --source $NuGetPublishUri"
                 dotnet nuget push $nupkg --api-key $NuGetPublishKey --source $NuGetPublishUri
             }
         } else {

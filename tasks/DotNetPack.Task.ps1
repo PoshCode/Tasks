@@ -13,7 +13,7 @@ Add-BuildTask DotNetPack @{
             # that explicitly set IsPackable=true should be packed
             $Content = Get-Content $Proj -Raw -ErrorAction SilentlyContinue
             if ($Content -match '<IsPackable>\s*(true|True|TRUE)\s*</IsPackable>') {
-                $DllPath = Join-Path $script:OutputPath "bin/$ProjectName/$script:Configuration/$script:TargetFramework/$script:TargetRuntime/$ProjectName.dll"
+                $DllPath = Join-Path $script:dotnetOutputPath "bin/$ProjectName/$script:Configuration/$script:TargetFramework/$script:TargetRuntime/$ProjectName.dll"
                 if (Test-Path $DllPath) {
                     $DllPath
                 }
@@ -33,10 +33,7 @@ Add-BuildTask DotNetPack @{
                 
                 if ($ExistingPkg) {
                     $ExistingPkg
-                } else {
-                    # Return a placeholder path so Outputs is not empty (file doesn't exist yet, so task will run)
-                    Join-Path $script:DotNetPackRoot "$ProjectName.nupkg"
-                }
+                } else { $BuildRoot }
             }
         }
     }
@@ -56,7 +53,7 @@ Add-BuildTask DotNetPack @{
 
         Write-Host "Packing $Name"
 
-        Write-Build Gray "dotnet pack $dotnetSolution --no-build --include-symbols $(($options.GetEnumerator().ForEach({"$($_.key) $($_.value)"})) -join ' ') -p:SolutionName=$dotnetSolutionName"
-        dotnet pack $dotnetSolution --no-build --include-symbols @options "-p:SolutionName=$dotnetSolutionName"
+        Write-Build Yellow "dotnet pack $dotnetSolution --no-build --include-symbols $(($options.GetEnumerator().ForEach({"$($_.key) $($_.value)"})) -join ' ')"
+        dotnet pack $dotnetSolution --no-build --include-symbols @options
     }
 }
