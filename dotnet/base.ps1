@@ -1,10 +1,8 @@
 <#
 .SYNOPSIS
-    DotNet build script -- extends always.ps1 with .NET build support.
+    DotNet build script -- extends common base with .NET build support.
 .EXAMPLE
     Invoke-Build
-.NOTES
-    0.6.0 - Split from build.example.ps1
 #>
 [CmdletBinding()]
 param(
@@ -130,14 +128,7 @@ Enter-Build {
 #endregion
 
 # Add the dotnet tasks to the common tasks
-$script:InitializeTasks = @(
-    # In CI pipelines (or if you specify $Clean)
-    if ($BuildSystem -ne "None" -or $Script:Clean) {
-        # Run the Clean-Output task before the rest of the build tasks
-        "Clean-Output"
-    }
-) + $InitializeTasks + @("Restore-DotNet")
-
+$script:InitializeTasks += @("Restore-DotNet")
 $script:BuildTasks += @("Build-DotNet")
 $script:PublishTasks += @("Pack-DotNet", "Publish-DotNet")
 $script:TestTasks += $script:BuildSystem -eq "None" ? @("Test-DotNet") : @("Test-DotNet", "Convert-Trx2JUnit", "Convert-Coverage")

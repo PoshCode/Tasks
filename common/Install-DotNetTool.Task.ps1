@@ -6,7 +6,7 @@
 
     Then `dotnet tool restore` will be run to ensure the tools are installed.
 #>
-Add-BuildTask Restore-DotNetTools @{
+Add-BuildTask Install-DotNetTool @{
     Jobs = {
         $DotNetToolManifest = @(
             Join-Path $BuildRoot .config/dotnet-tools.json

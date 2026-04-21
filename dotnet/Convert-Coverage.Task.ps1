@@ -1,5 +1,5 @@
 Add-BuildTask Convert-Coverage @{
-    If   = { $Script:CollectCoverage }
+    If   = { !$Script:SkipCoverage }
     Jobs = {
         Set-Location $SolutionTestResultsRoot
         # ------------------------------

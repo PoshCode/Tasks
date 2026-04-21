@@ -25,7 +25,7 @@ Add-BuildTask Test-Helm @{
                 Write-Build Yellow "kubeconform not found, attempting installation..."
                 &(Join-Path $script:BuildTasksRoot "scripts" "Install-GithubRelease.ps1") -Org "yannh" -Repo "kubeconform" -Verbose -ErrorAction SilentlyContinue
             }
-            # TODO: Why is this here? This should be handled by Install-GitHubTools
+            # TODO: Why is this here? This should be handled by Install-FromGitHub
             Write-Build Yellow "kubeconform -strict -ignore-missing-schemas -schema-location default -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' "-verbose" -output pretty $CompiledOutput"
             Invoke-Native {
                 kubeconform -strict -ignore-missing-schemas -schema-location default -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' "-verbose" -output pretty $CompiledOutput

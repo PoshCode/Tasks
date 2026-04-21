@@ -1,15 +1,14 @@
 <#
 .SYNOPSIS
-    Helm build script -- extends always.ps1 with Helm chart support.
+    Helm build script -- extends common base with Helm chart support.
 .EXAMPLE
-    Invoke-Build Build-Helm
-.NOTES
-    0.6.0 - Split from build.example.ps1
+    Invoke-Build
 #>
 [CmdletBinding()]
 param(
     [ValidateScript({ "../common/base.ps1" })]
     $Extends,
+
     # Path to the Helm charts directory -- defaults to $BuildRoot/charts
     [string]$HelmChartRoot,
 

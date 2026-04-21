@@ -27,7 +27,7 @@ Add-BuildTask Test-DotNet @{
             "-configuration"     = $configuration
         } + $script:dotnetOptions
 
-        if ($Script:CollectCoverage) {
+        if (!$Script:SkipCoverage) {
             # Because we wrapt it in dotnet coverage, we need to build this as a string
             $Command = "dotnet test $dotnetSolution --no-build"
             $options.GetEnumerator() | ForEach-Object {

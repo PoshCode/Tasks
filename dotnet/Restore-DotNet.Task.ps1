@@ -22,7 +22,7 @@ Add-BuildTask Restore-DotNet @{
             Join-Path $script:SolutionOutputPath "obj/$ProjectName/project.assets.json"
         }
     }
-    Jobs    = "Restore-DotNetTools", {
+    Jobs    = "Install-DotNetTool", {
         $local:options = @{} + $script:dotnetOptions
         $NugetConfig = Get-ChildItem $BuildRoot -File | Where-Object { $_.Name -ieq "NuGet.config" }
         if ($NugetConfig) {

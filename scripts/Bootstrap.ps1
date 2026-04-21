@@ -11,15 +11,12 @@
 #>
 [CmdletBinding()]
 param(
-    # Path to a RequiredModules.psd1 (if missing will only install InvokeBuild)
-    $RequiredModulesPath = "$PSScriptRoot/../RequiredModules.psd1",
-
-    # Scope for installation (of scripts and modules). Defaults to CurrentUser
-    [ValidateSet("AllUsers", "CurrentUser")]
-    $Scope = "CurrentUser"
+    # Path to a .requires.psd1 (if missing will only install InvokeBuild)
+    [Alias("RequiredModulesPath")]
+    $Path = "$PSScriptRoot/../build.requires.psd1"
 )
 Push-Location -StackName BootStrap
 
-& "$PSScriptRoot/../scripts/Install-RequiredModule.ps1" $RequiredModulesPath
+& "$PSScriptRoot/Install-PowerShellModule.ps1" $Path
 
 Pop-Location -StackName BootStrap

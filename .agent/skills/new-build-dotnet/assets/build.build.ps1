@@ -40,7 +40,7 @@ if ($MyInvocation.ScriptName -notlike '*Invoke-Build.ps1') {
 }
 
 # Define your preferred default build for local dev:
-Add-BuildTask . Get-Version, Build, Test
+Add-BuildTask . "Get-Version", "Build", "Test"
 
 # Each build is responsible to define the five core tasks for CI
 # But each base adds opinionated tasks to these variables

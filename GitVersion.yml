@@ -1,74 +1,28 @@
-#  Each merged branch against main will increment the version unless otherwise specified in a commit message
-# TrunkBased is the only workflow where each commit to a feature changes the pre-release tag
-workflow: TrunkBased/preview1
-# mode: ContinuousDeployment
-# mode: ContinuousDelivery
-# mode: ManualDeployment
-# No dashes in date
-commit-date-format: "yyyyMMddTHHmmss"
-# Use BuildId from Azure DevOps (with fallback)
-assembly-versioning-format: '{Major}.{Minor}.{Patch}.{env:BUILD_COUNT ?? 0}'
-assembly-informational-format: '{Major}.{Minor}.{Patch}{PreReleaseTagWithDash}+Build.{env:BUILD_COUNT ?? 0}.Date.{CommitDate}.Branch.{env:SafeBranchName ?? unknown}.Sha.{Sha}'
-# Format version bump messages as git trailers
-major-version-bump-message: 'semver:\s?(breaking|major)'
-minor-version-bump-message: 'semver:\s?(feature|minor)'
-patch-version-bump-message: 'semver:\s?(fix|patch)'
-no-bump-message: 'semver:\s?(none|skip)'
-commit-message-incrementing: Enabled
-# semantic-version-format: Loose
+# https://gitversion.net/docs/reference/configuration
+workflow: GitFlow/v1
+mode: ContinuousDelivery
+increment: Minor
 strategies:
 - TaggedCommit
-- Mainline
 - TrackReleaseBranches
 - VersionInBranchName
-- MergeMessage
-
 branches:
   main:
-    increment: Minor
-    prevent-increment:
-      # If false, rebuilds of the same code will increment the version!
-      when-current-commit-tagged: true
+    regex: ^production$
+  develop:
+    regex: ^main$
+    label: "beta"
   release:
-    mode: ManualDeployment
     label: rc
-    increment: None
-    prevent-increment:
-      of-merged-branch: true
-      when-current-commit-tagged: false
-    track-merge-target: false
-    is-release-branch: true
-    # A hotfix is just a release with bad habits
-    regex: ^(?:releases?)/(?<BranchName>\d+\.\d+(\.\d+)?)$
+    mode: ContinuousDelivery
   hotfix:
-    mode: ManualDeployment
-    label: hotfix
-    regex: ^(?:hotfix(?:es)?)/(?<BranchName>\d+\.\d+(\.\d+)?)$
-    increment: None
-    prevent-increment:
-      of-merged-branch: true
-      when-current-commit-tagged: false
-    track-merge-target: false
-    is-release-branch: true
-
-  feature:
-    # any branch name that starts with feature
-    # (with any number of / separated segments)
-    # we use the last segment as the BranchName label...
-    regex: ^features?[/-](.+[/-])*(?<BranchName>[^/-]+)$
-    # label: alpha.{BranchName}.
-    # Since we *know* it's a feature, then we can increment the minor version
-    increment: Minor
-    source-branches: [ "main", "feature", "release" ]
+    label: rc
+    mode: ContinuousDelivery
   pull-request:
-    label: pr{BranchName}
-    regex: ^pull/(?<BranchName>[^/-]+)/merge$
-  unknown:
-    # we usually don't distinguish feature from fix in our branch names
-    # So EVERYTHING just increments the minor version
-    regex: ^.*[-/](?<BranchName>[^/-]+)$
-    increment: Minor
-    # label: alpha.{BranchName}.
-    source-branches: [ "main", "release", "feature" ]
+    regex: ^pull/(?<Number>[^/-]+)/merge$
+    label: apr.{Number}.c
     track-merge-target: true
-    tracks-release-branches: true
+  feature:
+    regex: ^feat(ure)?/[^\d]*(?<Number>\d+)?.*?$
+    mode: ContinuousDelivery
+    label: alpha.{Number}.c

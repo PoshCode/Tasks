@@ -6,52 +6,46 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseProcessBlockForPipelineCommand', 'InputObject', Justification = 'For Invoke-Build Compabitility')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', "InputObject", Justification = 'For Invoke-Build Compabitility')]
 param(
-    [string]$RequiredModulesFile = "$pwd/RequiredModules.psd1",
+    [Alias("RequiredModulesPath")]
+    [string]$path = "$pwd/*.requires.psd1",
 
-    [hashtable]$RequiredModules = @{
-        'InvokeBuild' = '[5.11.1, 6.0)'
-    },
-    # This command ignores pipeline input
+    [string[]]$Specification = @(
+        'InvokeBuild:[5.11.1, 6.0)'
+    ),
+    # This command explicitly ignores pipeline input
+    # But is sometimes called with input ...
     [Parameter(ValueFromPipeline, ValueFromRemainingArguments)]
     [PSObject[]]$InputObject,
 
     # This allows passing a different url for modulefastparam source. Used for Harness which must use APIM url to reach proget
     [string]$ModuleFastSourceUrl = "https://nuget.loandepot.com/nuget/PowerShell/v3/index.json",
 
-    # ProGet API token for authenticated access (required for Harness/APIM endpoint, not needed for ADO private link)
-    [string]$ProGetToken
+    # API token for APIM access (only needed for accessing the APIM from outside the firewall)
+    [SecureString]$ApiToken
 )
 
-# Construct credential if token is provided (for Harness APIM authentication)
-$Credential = if ($ProGetToken) {
-    $secureToken = ConvertTo-SecureString $ProGetToken -AsPlainText -Force
-    [System.Management.Automation.PSCredential]::new('api', $secureToken)
-} else {
-    $null
+$Destination = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'powershell/Modules'
+# If we have not yet migrated our PowerShell modules to LocalApplicationData on Windows
+if ($Env:PSModulePath -split ([Io.Path]::PathSeparator) -notcontains $Destination) {
+    # On Windows, the modules folder is not pre-created?
+    $Destination = mkdir (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'PowerShell/Modules') -Force | Convert-Path
 }
 
-# We have not yet migrated our PowerShell modules to LocalApplicationData on Windows
 $ModuleFastParam = @{
     Source      = $ModuleFastSourceUrl
-    Destination = if ($IsWindows) {
-        # On Windows, the modules folder is not pre-created?
-        mkdir (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'PowerShell/Modules') -Force | Convert-Path
-    } else {
-        Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'powershell/Modules'
-    }
+    Destination = $Destination
 }
-if (-not (Test-Path $RequiredModulesFile)) {
-    $ModuleFastParam['Specification'] = $RequiredModules.GetEnumerator().ForEach{ $_.Key + ":" + $_.Value }
+# This wrapper uses the path if it exists, otherwise uses the Specification
+if (-not (Test-Path $Path)) {
+    $ModuleFastParam['Specification'] = $Specification
     # Update this for the environment variable
-    $RequiredModulesFile = $RequiredModules.Keys -join ";"
+    $Path = "'$($Specification -join "', '")'"
 } else {
-    $ModuleFastParam['Path'] = $RequiredModulesFile
+    $ModuleFastParam['Path'] = $Path
 }
 
+# If ModuleFast is not already installed, install it to $Destination
 if (!(Get-Module ModuleFast -ListAvailable -ErrorAction SilentlyContinue)) {
-    # $PSModulePaths = @("PSModulePaths:") + $env:PSModulePath.Split([IO.Path]::PathSeparator, [StringSplitOptions]::RemoveEmptyEntries)
-    # Write-Verbose $($PSModulePaths -join "`n  $($PSStyle.Formatting.Verbose)") -Verbose
-
     Write-Verbose "ModuleFast not found. Installing to $($ModuleFastParam.Destination)" -Verbose
     # When we get redirected beyond our limit, IWR throws
     [string]$Location = try {
@@ -71,11 +65,14 @@ if (!(Get-Module ModuleFast -ListAvailable -ErrorAction SilentlyContinue)) {
     Remove-Item $file
 }
 
-# Install modules from ProGet (with auth for Harness/APIM, without auth for ADO private link)
-if ($Credential) {
-    Install-ModuleFast @ModuleFastParam -Credential $Credential -Verbose
-} else {
-    Install-ModuleFast @ModuleFastParam -Verbose
+# Use APIM authentication token if provided
+if ($ApiToken) {
+    $ModuleFastParam['Credential'] = [System.Management.Automation.PSCredential]::new('api', $ApiToken)
 }
 
-Write-Host "##vso[task.setvariable variable=RequiredModules]$RequiredModulesFile"
+Install-ModuleFast @ModuleFastParam -Verbose
+
+if ($BuildSystem -eq "Azure") {
+    # We use this as a condition in the Azure step, to skip rerunning this job
+    Write-Host "##vso[task.setvariable variable=RequiredModules]$Path"
+}

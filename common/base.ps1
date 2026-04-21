@@ -15,8 +15,11 @@ param(
     # Add the clean task before the default build
     [switch]$Clean,
 
-    # Collect code coverage when tests are run
-    [switch]$CollectCoverage
+    # Default to collecting code coverage when tests are run
+    [switch]$SkipCoverage,
+
+    # The base goal is 85% code coverage
+    $PassingCodeCoverage = 0.85
 )
 
 ## Guard against double-initialization in diamond inheritance
@@ -142,11 +145,10 @@ Enter-Build {
 
     $Script:TestResultsRoot = $script:TestResultsRoot ?? # An override for build script parameters
     $Env:LDBUILD_TEST_ROOT ?? # An override for machine-level settings
-    $Env:COMMON_TESTRESULTSDIRECTORY ?? # Azure
     $Env:TEST_RESULTS_DIRECTORY ??
     (Join-Path $OutputPath testresults)
 
-    $Script:TempDirectory = @(Get-Content Env:LDBUILD_TEMP_DIRECTORY, Env:AGENT_TEMPDIRECTORY, Env:COMMON_TESTRESULTSDIRECTORY, Env:TEMP, Env:TMP -ErrorAction Ignore) |
+    $Script:TempDirectory = @(Get-Content Env:LDBUILD_TEMP_DIRECTORY, Env:AGENT_TEMPDIRECTORY, Env:TEMP, Env:TMP -ErrorAction Ignore) |
         Where-Object { Test-Path $_ } |
         Select-Object -First 1
     if (-not $Script:TempDirectory) { $Script:TempDirectory = if ($IsLinux) { "/tmp" } else { [System.IO.Path]::GetTempPath() } }
@@ -172,26 +174,32 @@ Enter-Build {
     Write-Build Cyan "  TempDirectory: $TempDirectory"
     Write-Build Cyan "  UniversalPackageRoot: $UniversalPackageRoot"
 
-    # The default goal is 90% code coverage
-    $Script:RequiredCodeCoverage ??= 0.9
+    # If we're skipping coverage, make sure there are no demands on passing
+    if ($SkipCoverage) {
+        $Script:PassingCodeCoverage = -1.0
+    }
 }
 
 # Our common task definitions
-$script:InitializeTasks = "Install-RequiredModules", "Install-GitHubTools", "Restore-DotNetTools", "Get-Version"
+$script:InitializeTasks = @(
+    # In CI pipelines (or if you specify $Clean)
+    if ($BuildSystem -ne "None" -or $Script:Clean) {
+        # Run the Clean-Output task before the rest of the build tasks
+        "Clean-Output"
+    }
+    # Note that we run *all* of the Install tasks via the alias which must be kept up to date
+    "Install-All"
+    "Get-Version"
+)
 $script:BuildTasks = @()
 $script:PublishTasks = @()
 $script:TestTasks = @()
 $script:PushTasks = @("Push-Docker")
 $script:CheckpointTasks = @("Tag-Source")
 
+
 # Initially define the CI task as Get-Version...Tag-Source using virtual task names
 Add-BuildTask CI @(
-    # In CI pipelines (or if you specify $Clean)
-    if ($BuildSystem -ne "None" -or $Script:Clean) {
-        # Run the Clean-Output task before the rest of the build tasks
-        "Clean-Output"
-    }
-    "Get-Version"
     "Initialize"
     "Build"
     "Test"

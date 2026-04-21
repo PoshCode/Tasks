@@ -1,5 +1,5 @@
 # TODO: in pipeline environments, we should trigger the "cache" task for these to speed up using them
-Add-BuildTask Install-GitHubTools @{
+Add-BuildTask Install-FromGitHub @{
     If = { $script:GHTools.keys.Count -gt 0 }
     Jobs = {
         foreach ($tool in $script:GHTools.keys) {

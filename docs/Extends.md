@@ -1,6 +1,6 @@
 # Build Script Inheritance with Invoke-Build `Extends`
 
-Invoke-Build (v5.11+) supports a special `$Extends` parameter that enables **build script inheritance**. A project's build script can extend the base scripts and inherit their parameters, initialization, and task definitions. We've organized our tasks into framework folders, and each framework has a `base.ps1` script in it. To create a build, you'll want to extend one or more of those!
+Invoke-Build (v5.14+) supports a special `$Extends` parameter that enables **build script inheritance**. A project's build script can extend the base scripts and inherit their parameters, initialization, and task definitions. We've organized our tasks into framework folders, and each framework has a `base.ps1` script in it. To create a build, you'll want to extend one or more of those!
 
 ## How It Works
 
@@ -86,9 +86,9 @@ Parameter discovery order (depth-first recursion):
 ┌─────────────────────────────────────────────────────────────────────┐
 │ PARAMETER DISCOVERY (depth-first)                                   │
 │                                                                     │
-│  1. common/base.ps1     → $Clean, $CollectCoverage                  │
+│  1. common/base.ps1     → $Clean, $SkipCoverage                     │
 │  2. helm/base.ps1       → $HelmChartRoot, $ChartName                │
-│  3. common/base.ps1     → $Clean, $CollectCoverage    (same, no-op) │
+│  3. common/base.ps1     → $Clean, $SkipCoverage       (same, no-op) │
 │  4. dotnet/base.ps1     → $Configuration, $Solution,                |
 |                           $dotnetSolution, $dotnetOptions,          │
 │                      $TargetFramework = "net10.0",  ← registered    │
@@ -534,10 +534,10 @@ Because task `If` conditions are evaluated **at task definition time** (during l
 └─────────────────────────────────────────────────────────────────────┘
 
 # WRONG -- evaluates to $null during loading, task always skips:
-Add-BuildTask Install-GitHubTools @{ If = $script:GHTools.Count -gt 0 }
+Add-BuildTask Install-FromGitHub @{ If = $script:GHTools.Count -gt 0 }
 
 # RIGHT -- deferred to runtime, evaluates after Enter-Build sets $GHTools:
-Add-BuildTask Install-GitHubTools @{ If = { $script:GHTools.Count -gt 0 } }
+Add-BuildTask Install-FromGitHub @{ If = { $script:GHTools.Count -gt 0 } }
 ```
 
 ### What Goes Where -- Decision Guide
