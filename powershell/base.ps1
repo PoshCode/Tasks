@@ -46,11 +46,11 @@ Enter-Build {
     if (-not $script:PSRepository) { $script:PSRepository = "DevOpsPowerShell" }
 
     $script:PowerShellModulePublishUri = Get-Content Variable:PowerShellModulePublishUri,
-    Env:LDBUILD_PS_PUBLISH_URI -ErrorAction Ignore |
+    Env:IB_PS_PUBLISH_URI -ErrorAction Ignore |
         Select-Object -First 1
 
     $script:PowerShellModulePublishKey = Get-Content Variable:PowerShellModulePublishKey,
-    Env:LDBUILD_PS_PUBLISH_KEY -ErrorAction Ignore |
+    Env:IB_PS_PUBLISH_KEY -ErrorAction Ignore |
         Select-Object -First 1
 
     # Default ModuleName to the project folder name
@@ -66,7 +66,8 @@ Enter-Build {
     Write-Build Cyan "  ModuleName   [$script:ModuleName]"
     Write-Build Cyan "  ModuleOutputPath   [$script:ModuleOutputPath]"
 
-    $script:SourcePath ??= (Join-Path $BuildRoot src), (Join-Path $BuildRoot $script:ModuleName) | Convert-Path -ErrorAction Ignore | Select-Object -First 1
+    $script:SourcePath ??= (Join-Path $BuildRoot src), (Join-Path $BuildRoot source), (Join-Path $BuildRoot $script:ModuleName) |
+        Convert-Path -ErrorAction Ignore | Select-Object -First 1
 
     Write-Build Cyan "  PSRepository [$script:PSRepository]"
 

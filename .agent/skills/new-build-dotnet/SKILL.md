@@ -15,8 +15,9 @@ There are NUMBERED documents in ./references with more detailed instructions for
 ## Process Overview
 
 1. Move solution files to the root of the project
-2. Copy the `*.Build.*` files from assets/ to your project root and customize them as needed
-3. Update your projects:
+2. Clean old intermediate and output directories, and update .gitignore to add the new `Output/` directory
+3. Copy the `*.Build.*` files from assets/ to your project root and customize them as needed
+4. Update your projects:
     - Ensure direct project references
     - Add the `<IsPackable>` property as appropriate
     - Add the `<IsPublishable>` property as appropriate

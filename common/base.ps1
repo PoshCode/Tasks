@@ -136,19 +136,17 @@ Enter-Build {
 
     # Build-system information. There are a few different sources for the information
     # But each variable should have a default here:
-    $Script:OutputPath = if ($Env:BUILD_BINARIESDIRECTORY) {
-        $Env:BUILD_BINARIESDIRECTORY
-    } else {
-        Join-Path $BuildRoot 'Output'
-    }
+    $Script:OutputPath = $Env:BUILD_BINARIESDIRECTORY ??
+    $Env:IB_OUTPUT_PATH ??
+    (Join-Path $BuildRoot 'Output')
     New-Item -Type Directory -Path $OutputPath -Force | Out-Null
 
     $Script:TestResultsRoot = $script:TestResultsRoot ?? # An override for build script parameters
-    $Env:LDBUILD_TEST_ROOT ?? # An override for machine-level settings
+    $Env:IB_TEST_ROOT ?? # An override for machine-level settings
     $Env:TEST_RESULTS_DIRECTORY ??
     (Join-Path $OutputPath testresults)
 
-    $Script:TempDirectory = @(Get-Content Env:LDBUILD_TEMP_DIRECTORY, Env:AGENT_TEMPDIRECTORY, Env:TEMP, Env:TMP -ErrorAction Ignore) |
+    $Script:TempDirectory = @(Get-Content Env:IB_TEMP_DIRECTORY, Env:AGENT_TEMPDIRECTORY, Env:TEMP, Env:TMP -ErrorAction Ignore) |
         Where-Object { Test-Path $_ } |
         Select-Object -First 1
     if (-not $Script:TempDirectory) { $Script:TempDirectory = if ($IsLinux) { "/tmp" } else { [System.IO.Path]::GetTempPath() } }

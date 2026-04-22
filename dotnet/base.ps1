@@ -83,7 +83,7 @@ Enter-Build {
     $script:SolutionName = Split-Path $script:dotnetSolution -LeafBase
     $script:SolutionOutputPath = Join-Path $script:OutputPath $script:SolutionName
     # This is used in Directory.build.props to configure the default output directory for dotnet restore and build (and publish?)
-    $Env:LDBUILD_OUTPUT_ROOT = $script:OutputPath
+    $Env:IB_OUTPUT_ROOT = $script:OutputPath
 
     # The DotNetPublishRoot is the "publish" folder within the Output (used for dotnet publish output)
     $script:DotNetPublishRoot ??= Join-Path $script:OutputPath publish
@@ -94,7 +94,7 @@ Enter-Build {
     $script:DotNetVersion ??= $Env:DOTNET_VERSION ?? (dotnet --version)
     $script:TargetFramework ??= $Env:DOTNET_TARGET_FRAMEWORK ?? ("net" + $script:DotNetVersion.Split(".")[0..1] -join ".")
     $script:TargetRuntime ??= $ENV:DOTNET_TARGET_RUNTIME ?? ($IsLinux ? "linux-x64" : "win-x64")
-    $ENV:LDBUILD_TARGET_RUNTIME = $script:TargetRuntime
+    $ENV:IB_TARGET_RUNTIME = $script:TargetRuntime
 
     $script:dotnetProjects = @(dotnet sln $script:dotnetSolution list | Where-Object { $_ -like "*.*proj" })
     $script:dotnetTestProjects = @($script:dotnetProjects | Where-Object { $_ -like "*Test*.*proj" })

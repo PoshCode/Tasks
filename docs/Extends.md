@@ -563,7 +563,7 @@ Add-BuildTask Install-FromGitHub @{ If = { $script:GHTools.Count -gt 0 } }
 │ $script:TestResultsRoot = ...    │            │      ✓       │
 │ $script:GHTools = @{}            │            │      ✓       │
 │ $script:dotnetProjects = ...     │            │      ✓       │
-│ $Env:LDBUILD_* = ...             │            │      ✓       │
+│ $Env:IB_* = ...             │            │      ✓       │
 └──────────────────────────────────┴────────────┴──────────────┘
 ```
 
