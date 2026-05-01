@@ -89,7 +89,6 @@ Enter-Build {
     $script:DotNetPackRoot ??= Join-Path $script:OutputPath nuget
 
     $script:SolutionTestResultsRoot = Join-Path $Script:TestResultsRoot $script:SolutionName
-    New-Item -Type Directory -Path $SolutionTestResultsRoot -Force | Out-Null
     $script:DotNetVersion ??= $Env:DOTNET_VERSION ?? (dotnet --version)
     $script:TargetFramework ??= $Env:DOTNET_TARGET_FRAMEWORK ?? ("net" + $script:DotNetVersion.Split(".")[0..1] -join ".")
     $script:TargetRuntime ??= $ENV:DOTNET_TARGET_RUNTIME ?? ($IsLinux ? "linux-x64" : "win-x64")

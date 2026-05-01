@@ -12,7 +12,8 @@ Add-BuildTask Test-DotNet @{
     }
     Outputs = {
         # Return any .trx files in the test results directory
-        # dotnet test generates .trx files with machine/user-based names, not project names
+        # dotnet test generates .trx files with machine/user-based names, not project or solution names
+        New-Item -Type Directory -Path $SolutionTestResultsRoot -Force | Out-Null
         $TrxFiles = Get-ChildItem $SolutionTestResultsRoot -Filter "*.trx" -ErrorAction SilentlyContinue
 
         if ($TrxFiles) {

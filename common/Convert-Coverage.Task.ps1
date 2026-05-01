@@ -1,6 +1,7 @@
 Add-BuildTask Convert-Coverage @{
     If   = { !$Script:SkipCoverage }
     Jobs = {
+        New-Item -Type Directory -Path $SolutionTestResultsRoot -Force | Out-Null
         Set-Location $SolutionTestResultsRoot
         # ------------------------------
         dotnet reportgenerator -reports:'./coverage/*.xml' `
