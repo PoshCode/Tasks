@@ -58,7 +58,7 @@ if ($BuildRoots.Count -gt 1) {
 Enter-Build {
 
     # Resolve $Solution to a full path -- path separators indicate a direct path, otherwise search $BuildRoot
-    $script:dotnetSolution = if ($Solution -match '[\\/]') {
+    $script:DotNetSolutionFile = if ($Solution -match '[\\/]') {
         $solutionPath = if ([System.IO.Path]::IsPathRooted($Solution)) {
             $Solution
         } else {
@@ -79,14 +79,13 @@ Enter-Build {
         }
         $found[0] | Convert-Path
     }
-    $script:SolutionName = Split-Path $script:dotnetSolution -LeafBase
-    $script:SolutionOutputPath = Join-Path $script:OutputPath $script:SolutionName
-    # This is used in Directory.build.props to configure the default output directory for dotnet restore and build (and publish?)
-    $Env:IB_OUTPUT_ROOT = $script:OutputPath
+    $script:SolutionName = Split-Path $script:DotNetSolutionFile -LeafBase
+    # This is used in Directory.build.props to configure the root output directory for dotnet
+    $Env:IB_OUTPUT_ROOT ??= $script:OutputPath
 
-    # The DotNetPublishRoot is the "publish" folder within the Output (used for dotnet publish output)
     $script:DotNetPublishRoot ??= Join-Path $script:OutputPath publish
     $script:DotNetPackRoot ??= Join-Path $script:OutputPath nuget
+    $script:SolutionOutputPath ??= Join-Path $script:OutputPath $script:SolutionName
 
     $script:SolutionTestResultsRoot = Join-Path $Script:TestResultsRoot $script:SolutionName
     $script:DotNetVersion ??= $Env:DOTNET_VERSION ?? (dotnet --version)
@@ -96,22 +95,46 @@ Enter-Build {
     $ENV:IB_TARGET_RUNTIME = $script:TargetRuntime
     $ENV:IB_CONFIGURATION = $script:Configuration
 
+    $script:DotNetProjects = dotnet sln $script:DotNetSolutionFile list |
+        Where-Object { $_ -like "*.*proj" } |
+        Join-Path $script:BuildRoot -ChildPath { $_ } |
+        ForEach-Object {
+            $BaseName = Split-Path $_ -LeafBase
+            [PSCustomObject]@{
+                PSTypeName                 = "DotNet.Project"
+                Path                       = $_
+                # The rest of these properties MUST BE populated by getProperty in the Restore task
+                BaseIntermediateOutputPath = Join-Path $script:SolutionOutputPath "obj/$BaseName"
+                AssemblyName               = $BaseName
+                IsPackable                 = [Nullable[bool]]$null
+                IsPublishable              = [Nullable[bool]]$null
+                IsTestProject              = [Nullable[bool]]$null
+                TargetFileName             = [NullString]::Value
+                OutDir                     = [NullString]::Value
+                PublishDir                 = [NullString]::Value
+            }
+        }
+
+
+    $script:dotnetTestProjects = @($script:DotNetProjects | Where-Object { $_ -like "*Test*.*proj" })
     $script:dotnetOptions ??= @{}
 
     $script:NuGetPublishKey ??= $Env:NUGET_API_KEY
-    $script:NuGetPublishUri ??= $Env:NUGET_API_URI ?? "https://nuget.loandepot.com/nuget/LDTS/v3/index.json"
+    $script:NuGetPublishUri ??= $Env:NUGET_API_URI
     $script:UPackPublishKey ??= $Env:UPACK_API_KEY
-    $script:UPackPublishUri ??= $Env:UPACK_PUBLISH_URI ?? "https://nuget.loandepot.com"
+    $script:UPackPublishUri ??= $Env:UPACK_PUBLISH_URI
     $script:UPackFeed ??= $Env:UPACK_FEED_NAME ?? "build-output"
 
-    Write-Build Cyan "Initializing DotNet task variables (Solution: $script:dotnetSolution)"
+    Write-Build Cyan "Initializing DotNet task variables (Solution: $script:DotNetSolutionFile)"
     Write-Build Cyan "  Configuration: $script:Configuration"
-    Write-Build Cyan "  dotnetSolution: $script:dotnetSolution"
+    Write-Build Cyan "  TargetFramework: $script:TargetFramework"
+    Write-Build Cyan "  TargetRuntime: $script:TargetRuntime"
+    Write-Build Cyan "  DotNetSolutionFile: $script:DotNetSolutionFile"
     Write-Build Cyan "  SolutionOutputPath: $script:SolutionOutputPath"
     Write-Build Cyan "  DotNetPublishRoot: $DotNetPublishRoot"
     Write-Build Cyan "  DotNetPackRoot: $DotNetPackRoot"
     Write-Build Cyan "  SolutionTestResultsRoot: $SolutionTestResultsRoot"
-    Write-Build Cyan "  DotNetProjects: $(($script:dotnetProjects).Count)"
+    Write-Build Cyan "  DotNetProjects: $(($script:DotNetProjects).Count)"
     Write-Build Cyan "  DotNetTestProjects: $(($script:dotnetTestProjects).Count)"
     Write-Build Cyan "  NuGetPublishUri: $NuGetPublishUri"
     Write-Build Cyan "  UPackPublishUri: $UPackPublishUri"

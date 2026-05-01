@@ -1,24 +1,10 @@
 Add-BuildTask Test-DotNet @{
     Inputs  = {
-        $Projects = $dotnetTestProjects | ForEach-Object { Join-Path (Split-Path $dotnetSolution) $_ }
-        $Projects
-
-        # Also include source files from each project directory
-        foreach ($Proj in $Projects) {
-            $ProjectDir = Split-Path $Proj -Parent
-            Get-ChildItem $ProjectDir -Recurse -File -Include *.cs,*.csproj,*.resx,*.json -ErrorAction SilentlyContinue |
-                Where-Object FullName -NotMatch "[\\/]obj[\\/]|[\\/]bin[\\/]"
-        }
+        $DotNetProjects.Where({ $_.IsTestProject }).ForEach({ Get-ChildItem (Split-Path $_.Path) -Recurse -File -ErrorAction SilentlyContinue })
     }
     Outputs = {
-        # Return any .trx files in the test results directory
-        # dotnet test generates .trx files with machine/user-based names, not project or solution names
         New-Item -Type Directory -Path $SolutionTestResultsRoot -Force | Out-Null
-        $TrxFiles = Get-ChildItem $SolutionTestResultsRoot -Filter "*.trx" -ErrorAction SilentlyContinue
-
-        if ($TrxFiles) {
-            $TrxFiles | Select-Object -ExpandProperty FullName
-        } else { $BuildRoot }
+        Join-Path $SolutionTestResultsRoot "*.trx"
     }
     Jobs    = "Build-DotNet", {
 
@@ -27,19 +13,14 @@ Add-BuildTask Test-DotNet @{
             "-results-directory" = $SolutionTestResultsRoot
         } + $script:dotnetOptions
 
+        # Because we might wrap it in `dotnet coverage collect`, we need to build this as a string
+        $Command = "dotnet test --solution $DotNetSolutionFile -p:SolutionName=$SolutionName --no-build $(($options.GetEnumerator().ForEach({"-$($_.Key) $($_.Value)"})) -join ' ')"
         if (!$Script:SkipCoverage) {
-            # Because we wrapt it in dotnet coverage, we need to build this as a string
-            $Command = "dotnet test $dotnetSolution --no-build"
-            $options.GetEnumerator() | ForEach-Object {
-                $Command += " -$($_.Key) $($_.Value)"
-            }
-            $Command += " -p:SolutionName=$SolutionName"
-            $Name = (Split-Path $dotnetSolution -LeafBase).ToLower()
-            Write-Build Yellow "dotnet coverage collect '$Command' --output '$SolutionTestResultsRoot/coverage/$Name.xml' --output-format xml"
-            dotnet coverage collect $Command --output "$SolutionTestResultsRoot/coverage/$Name.xml" --output-format xml
+            Write-Build Yellow "dotnet coverage collect '$Command' --output '$SolutionTestResultsRoot/coverage/$SolutionName.xml' --output-format xml"
+            dotnet coverage collect $Command --output "$SolutionTestResultsRoot/coverage/$SolutionName.xml" --output-format xml
         } else {
-            Write-Build Yellow "dotnet test $dotnetSolution --no-build $(($options.GetEnumerator().ForEach({"-$($_.key) $($_.value)"})) -join ' ')"
-            dotnet test $dotnetSolution --no-build @options
+            Write-Build Yellow $Command
+            dotnet test --solution $DotNetSolutionFile -p:SolutionName=$SolutionName --no-build @options
         }
     }, "Convert-Trx2JUnit"
 }

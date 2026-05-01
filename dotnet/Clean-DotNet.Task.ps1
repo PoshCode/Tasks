@@ -1,6 +1,6 @@
 Add-BuildTask Clean-DotNet @{
-    Jobs    = {    
+    Jobs    = {
         Write-Build Yellow "dotnet clean $Name"
-        dotnet clean $dotnetSolution         
+        dotnet clean $DotNetSolutionFile
     }
 }
