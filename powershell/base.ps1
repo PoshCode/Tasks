@@ -93,7 +93,12 @@ $script:InitializeTasks = @(
     }
 ) + $InitializeTasks
 
-$script:BuildTasks += @("Build-Module")
+# When we have dotnet combined in a PowerShell module
+# We need to build the module after the dotnet publish
+# So that we can include the output assemblies in the module
+$script:BuildTasks += $BuildTasks -contains "Build-DotNet" ?
+                    @("Publish-DotNet", "Build-Module") :
+                    @("Build-Module")
 # TODO: Need to separate package & push
 $script:PublishTasks += @()
 $script:TestTasks += @("Import-Module", "Test-PowerShell", "Test-PowerShellSyntax")

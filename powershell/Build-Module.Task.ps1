@@ -2,40 +2,26 @@ Add-BuildTask Build-Module @{
     Inputs  = {
         @(
             Get-ChildItem -Path $BuildRoot -Recurse -Filter *.ps*
-            Get-ChildItem -Path $BuildRoot -Recurse -Filter *.cs | Where-Object FullName -NotLike (Join-Path $BuildRoot obj/*)
-            # This is here because on Dev workstations we build _into_ $BuildRoot
+            Get-ChildItem -Path $BuildRoot -Recurse -Filter *.cs | Where-Object FullName -NotLike "*/obj/*"
         ) | Where-Object FullName -NotLike (Join-Path $script:OutputPath /*)
     }
     # don't take off the script block, need to resolve AFTER init
     Outputs = {
         $InputObject = $_
-        $out = $script:OutputPath
         switch -regex ("$InputObject") {
             "ps1$" {
-                if ($Module) {
-                    $Module
-                } elseif ($out -and (Test-Path $out -PathType Container)) {
-                    Get-Item $out
-                } else {
-                    $out
-                }
+                $script:ModuleOutputPath
             }
             "cs$" {
-                if ($out -and ($Assemblies = Get-ChildItem -Path $out -Recurse -Filter *.dll -ErrorAction Ignore)) {
+                if ($out -and ($Assemblies = Get-ChildItem -Path $script:OutputPath -Recurse -Filter *.dll -ErrorAction Ignore)) {
                     $Assemblies
-                } elseif ($out -and (Test-Path $out -PathType Container)) {
-                    Get-Item $out
                 } else {
-                    $out
+                    Join-Path $script:ModuleOutputPath lib
                 }
             }
             default {
                 # .psd1, .psm1, .pssc etc — use the output directory as the comparison target
-                if ($out -and (Test-Path $out -PathType Container)) {
-                    Get-Item $out
-                } else {
-                    $out
-                }
+                $script:OutputPath
             }
         }
     }
@@ -56,7 +42,19 @@ Add-BuildTask Build-Module @{
                 })
         }
 
-        $Module = Build-Module -Output $script:OutputPath -UnversionedOutputDirectory @version -Passthru -Verbose
+        $Module = Build-Module -Output $script:OutputPath -UnversionedOutputDirectory @version -Passthru -Verbose:($VerbosePreference -eq "Continue")
+
+        # If there's output from a DotNetPublish task, copy it into a "lib" folder in the module output
+        if ($DotNetPublishRoot -and (Test-Path $DotNetPublishRoot)) {
+            $Libraries = New-Item (Join-Path $Module.ModuleBase lib) -Type Directory -Force | Convert-Path
+            Write-Build Yellow "Copying dotnet publish output from $DotNetPublishRoot to module lib $Libraries"
+            Get-ChildItem $DotNetPublishRoot -Filter *.dll -Recurse -ErrorAction Ignore
+            | Where-Object { $_.BaseName -notmatch "System.*" -and $_.Extension -notin ".nupkg" }
+            | Copy-Item -Destination $Libraries -Recurse
+        } else {
+            Write-Build Yellow "No assemblies to copy $DotNetPublishRoot"
+        }
+
         $script:ModuleName = $Module.Name
         $script:ManifestPath = $Module.Path
         $script:ModuleOutputPath = Split-Path $Module.Path
