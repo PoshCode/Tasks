@@ -11,16 +11,16 @@
 
     <!-- The SolutionName needs a default value because it's used in the RootOutputPath. -->
     <SolutionName Condition="'$(SolutionName)' == ''">_</SolutionName>
-    <RootOutputPath Condition="'$(IB_OUTPUT_ROOT)' == ''">$(MSBuildThisFileDirectory)Output/$(SolutionName)/</RootOutputPath>
+    <RootOutputPath Condition="'$(IB_OUTPUT_ROOT)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildThisFileDirectory), "Output"))</RootOutputPath>
     <!--
       DO NOT CHANGE THESE OUTPUT PATHS CONTROLLED BY IB_OUTPUT_ROOT
       THE RELATIVE SUBDIRECTORIES ARE CONVENTIONS USED BY THE BUILD PIPELINES
     -->
-    <RootOutputPath Condition="'$(IB_OUTPUT_ROOT)' != ''">$([MSBuild]::EnsureTrailingSlash($(IB_OUTPUT_ROOT)))$(SolutionName)/</RootOutputPath>
-    <BaseOutputPath>$(RootOutputPath)bin/$(MSBuildProjectName)</BaseOutputPath>
-    <BaseIntermediateOutputPath>$(RootOutputPath)obj/$(MSBuildProjectName)</BaseIntermediateOutputPath>
-    <PublishDir>$(RootOutputPath)publish/$(MSBuildProjectName)</PublishDir>
-    <ContainerArchiveDir>$(RootOutputPath)containers/</ContainerArchiveDir>
+    <RootOutputPath Condition="'$(IB_OUTPUT_ROOT)' != ''">$([MSBuild]::NormalizeDirectory($(IB_OUTPUT_ROOT)))</RootOutputPath>
+    <BaseOutputPath>$([MSBuild]::NormalizeDirectory($(RootOutputPath), $(SolutionName), "bin", $(MSBuildProjectName)))</BaseOutputPath>
+    <BaseIntermediateOutputPath>$([MSBuild]::NormalizeDirectory($(RootOutputPath), $(SolutionName), "obj", $(MSBuildProjectName)))</BaseIntermediateOutputPath>
+    <PublishDir>$([MSBuild]::NormalizeDirectory($(RootOutputPath), "publish", $(MSBuildProjectName)))</PublishDir>
+    <ContainerArchiveDir>$([MSBuild]::NormalizeDirectory($(RootOutputPath), "containers"))</ContainerArchiveDir>
 
     <!-- Supports setting the runtime identifier without passing it explicitly to each build -->
     <RuntimeIdentifier Condition="'$(IB_TARGET_RUNTIME)' != ''">$(IB_TARGET_RUNTIME)</RuntimeIdentifier>
