@@ -24,6 +24,7 @@
 
     <!-- Supports setting the runtime identifier without passing it explicitly to each build -->
     <RuntimeIdentifier Condition="'$(IB_TARGET_RUNTIME)' != ''">$(IB_TARGET_RUNTIME)</RuntimeIdentifier>
+    <Configuration Condition="'$(IB_CONFIGURATION)' != ''">$(IB_CONFIGURATION)</Configuration>
     <ContainerRuntimeIdentifier>$(RuntimeIdentifier)</ContainerRuntimeIdentifier>
     <ShouldUnsetParentConfigurationAndPlatform>false</ShouldUnsetParentConfigurationAndPlatform>
 

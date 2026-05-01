@@ -24,7 +24,6 @@ Add-BuildTask Test-DotNet @{
         $local:options = @{
             "-logger"            = "trx"
             "-results-directory" = $SolutionTestResultsRoot
-            "-configuration"     = $configuration
         } + $script:dotnetOptions
 
         if (!$Script:SkipCoverage) {

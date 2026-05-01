@@ -29,17 +29,8 @@ Add-BuildTask Build-DotNet @{
         }
     }
     Jobs    = "Restore-DotNet", "Get-Version", {
-        $Name = (Split-Path $dotnetSolution -LeafBase).ToLower()
-
-        $local:options = @{
-            '-configuration' = $script:configuration
-        } + $script:dotnetOptions
-
-        if (${script:Version}.$Name) {
-            $options["p"] = "Version=$(${script:Version}.$Name.InformationalVersion)"
-        } else {
+        $local:options = @{} + $script:dotnetOptions
             $options["p"] = "Version=$(${script:Version}.InformationalVersion)"
-        }
 
         Write-Build Yellow "dotnet build $dotnetSolution --no-restore $(($options.GetEnumerator().ForEach({"-$($_.key) $($_.value)"})) -join ' ')"
         # Invoke-BuildExec [-Command] ScriptBlock [[-ExitCode] Int32[]] [[-ErrorMessage] String] [-Echo] [-StdErr]
