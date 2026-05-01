@@ -12,16 +12,16 @@ param(
     [string[]]$Specification = @(
         'InvokeBuild:[5.11.1, 6.0)'
     ),
-    # This command explicitly ignores pipeline input
-    # But is sometimes called with input ...
+    # This command does not support pipeline input
+    # But is sometimes called with pipeline input ...
     [Parameter(ValueFromPipeline, ValueFromRemainingArguments)]
-    [PSObject[]]$InputObject,
+    [PSObject[]]$IgnoredPipelineInput,
 
-    # This allows passing a different url for modulefastparam source. Used for Harness which must use APIM url to reach proget
-    [string]$ModuleFastSourceUrl = "https://nuget.loandepot.com/nuget/PowerShell/v3/index.json",
+    # This allows passing a different url for source.
+    [string]$Source,
 
-    # API token for APIM access (only needed for accessing the APIM from outside the firewall)
-    [SecureString]$ApiToken
+    # This might be needed for a proxy like passing through APIM to a feed....
+    [System.Management.Automation.PSCredential]$Credential
 )
 
 $Destination = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'powershell/Modules'
@@ -30,12 +30,14 @@ if ($Env:PSModulePath -split ([Io.Path]::PathSeparator) -notcontains $Destinatio
     # On Windows, the modules folder is not pre-created?
     $Destination = mkdir (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'PowerShell/Modules') -Force | Convert-Path
 }
+$PSBoundParameters.Remove('IgnoredPipelineInput') | Out-Null
 
-$ModuleFastParam = @{
-    Source      = $ModuleFastSourceUrl
+$ModuleFastParam = $PSBoundParameters + @{
     Destination = $Destination
 }
-# This wrapper uses the path if it exists, otherwise uses the Specification
+
+# The defaults are not "bound"
+# ... use the path if it exists, otherwise the specification
 if (-not (Test-Path $Path)) {
     $ModuleFastParam['Specification'] = $Specification
     # Update this for the environment variable
@@ -63,11 +65,6 @@ if (!(Get-Module ModuleFast -ListAvailable -ErrorAction SilentlyContinue)) {
     Invoke-WebRequest $url -OutFile $file
     Expand-Archive $file -DestinationPath $ModuleFastParam.Destination
     Remove-Item $file
-}
-
-# Use APIM authentication token if provided
-if ($ApiToken) {
-    $ModuleFastParam['Credential'] = [System.Management.Automation.PSCredential]::new('api', $ApiToken)
 }
 
 Install-ModuleFast @ModuleFastParam -Verbose
