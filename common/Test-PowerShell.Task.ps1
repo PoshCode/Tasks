@@ -1,5 +1,4 @@
 
-#requires -Module @{ ModuleName = "Pester"; ModuleVersion = "5.6.0" }
 Add-BuildTask Test-PowerShell @{
     Inputs  = {
         Get-ChildItem $ModuleOutputRoot -Recurse -File
@@ -16,6 +15,8 @@ Add-BuildTask Test-PowerShell @{
     Jobs    = {
         $script:OldModulePath = $Env:PSModulePath
     }, {
+        # We can't use `requires` because installing dependencies is one of the build steps...
+        Import-Module Pester -MinimumVersion 5.6 -ErrorAction Stop
 
         # For PowerShell Modules with classes to work in tests:
         # 1. The $OutputRoot directory must be first on Env:PSModulePath
