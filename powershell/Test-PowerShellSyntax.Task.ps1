@@ -3,7 +3,7 @@ Add-BuildTask Test-PowerShellSyntax @{
         if ($Clean) {
             $BuildRoot # guaranteed to be old
         } else {
-            "$script:OutputPath${/}results.sarif"
+            "$script:ModuleTestResultsRoot/results.sarif"
         }
     }
     Inputs  = {
@@ -29,7 +29,7 @@ Add-BuildTask Test-PowerShellSyntax @{
         $results = $Files | Invoke-ScriptAnalyzer @ScriptAnalyzer
         if (Get-Module ConvertToSARIF -List) {
             Write-Verbose "Converting ScriptAnalyzer results to SARIF..."
-            $results | ConvertToSARIF\ConvertTo-SARIF -FilePath "$script:OutputPath/results.sarif"
+            $results | ConvertToSARIF\ConvertTo-SARIF -FilePath "$script:ModuleTestResultsRoot/results.sarif"
         } else {
             Write-Warning "ConvertToSARIF module not found. Sarif results will not be generated. Please add ConvertToSARIF to your build.requires.psd1 file."
         }
