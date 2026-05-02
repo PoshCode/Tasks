@@ -94,11 +94,11 @@ Write-Information "$($PSStyle.Foreground.BrightBlue)  BuildRoot: $BuildRoot$($PS
 # Each script in the Extends tree gets its own Enter-Build invoked with its $BuildRoot.
 Enter-Build {
     # In CI builds you have a BranchName
-    $script:BranchName = if ($Env:BUILD_SOURCEBRANCHNAME) {
-        $Env:BUILD_SOURCEBRANCHNAME
-    } elseif (Get-Command git -CommandType Application -ErrorAction SilentlyContinue) {
-        git branch --show-current
-    }
+    $script:BranchName = $Env:BUILD_SOURCEBRANCHNAME ?? $Env:EARTHLY_GIT_BRANCH ?? $(
+        if ((Test-Path ".git") -and (Get-Command git -CommandType Application -ErrorAction Ignore)) {
+            git branch --show-current
+        }
+    ) ?? "dirty"
 
     <# ? None of this information is being used except to print it out here...
     [bool]$script:IsPullRequest = $script:IsPullRequest ?? ($Env:BUILD_REASON -eq "PullRequest" -or $Env:DRONE_BUILD_EVENT -eq "pull_request")
@@ -188,7 +188,10 @@ $script:InitializeTasks = @(
     }
     # Note that we run *all* of the Install tasks via the alias which must be kept up to date
     "Install-All"
-    "Get-Version"
+    # Skip Get-Version if we're not in a git repo (yet -- e.g. initialize dependencies in a container)
+    if (Test-Path ".git") {
+        "Get-Version"
+    }
 )
 $script:BuildTasks = @()
 $script:PublishTasks = @()
