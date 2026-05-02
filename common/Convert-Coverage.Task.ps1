@@ -4,7 +4,7 @@ Add-BuildTask Convert-Coverage @{
         New-Item -Type Directory -Path $SolutionTestResultsRoot -Force | Out-Null
         Set-Location $SolutionTestResultsRoot
         # ------------------------------
-        dotnet reportgenerator -reports:'./coverage/*.xml' `
+        dotnet tool execute dotnet-reportgenerator-globaltool -reports:'./coverage/*.xml' `
             -targetdir:'./coverage' `
             -reporttypes:'Html;MarkdownSummaryGithub;TextSummary' `
             -filefilters:'+*;-/_*' `

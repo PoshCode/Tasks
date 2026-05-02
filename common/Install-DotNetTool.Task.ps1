@@ -11,11 +11,15 @@ Add-BuildTask Install-DotNetTool @{
         $DotNetToolManifest = @(
             Join-Path $BuildRoot .config/dotnet-tools.json
             Join-Path $BuildRoot dotnet-tools.json
+            Join-Path $BuildRoot build.tools.json
+            Join-Path $PSScriptRoot "../.config/dotnet-tools.json"
         ) | Resolve-Path -ErrorAction Ignore | Select-Object -First 1
-        if (-not $DotNetToolManifest) {
-            New-Item -ItemType Directory -Path "$BuildRoot/.config" -Force -ErrorAction Ignore
-            Copy-Item "$PSScriptRoot/../dotnet-tools.json" "$BuildRoot/.config/dotnet-tools.json" -Force
+        $local:options = @{
+            "-tool-manifest" = $DotNetToolManifest
         }
-        dotnet tool restore
+        if ($script:NugetConfigFile) {
+            $options["-configfile"] = $script:NugetConfigFile
+        }
+        dotnet tool restore @options
     }
 }

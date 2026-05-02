@@ -17,7 +17,7 @@ Add-BuildTask Test-DotNet @{
         $Command = "dotnet test --solution $DotNetSolutionFile -p:SolutionName=$SolutionName --no-build $(($options.GetEnumerator().ForEach({"-$($_.Key) $($_.Value)"})) -join ' ')"
         if (!$Script:SkipCoverage) {
             Write-Build Yellow "dotnet coverage collect '$Command' --output '$SolutionTestResultsRoot/coverage/$SolutionName.xml' --output-format xml"
-            dotnet coverage collect $Command --output "$SolutionTestResultsRoot/coverage/$SolutionName.xml" --output-format xml
+            dotnet tool execute dotnet-coverage collect $Command --output "$SolutionTestResultsRoot/coverage/$SolutionName.xml" --output-format xml
         } else {
             Write-Build Yellow $Command
             dotnet test --solution $DotNetSolutionFile -p:SolutionName=$SolutionName --no-build @options

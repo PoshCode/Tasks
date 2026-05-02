@@ -166,6 +166,7 @@ Enter-Build {
     if ($Clean -and -not ($BuildTask -eq "Clean-Output")) {
         $BuildTask = @("Clean-Output") + $BuildTask
     }
+    $script:NugetConfigFile = Get-ChildItem $BuildRoot -Filter "[Nn]u[Gg]et.config" | Convert-Path
 
     Write-Build Cyan "  OutputRoot: $OutputRoot"
     Write-Build Cyan "  TestResultsRoot: $TestResultsRoot"

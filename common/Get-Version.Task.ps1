@@ -28,15 +28,14 @@ Add-BuildTask Get-Version @{
             Remove-Item $VersionCacheFile
         }
 
-        Write-Build Yellow "dotnet gitversion -config $VersionConfig -nofetch -output file -outputfile $VersionCacheFile"
-        dotnet gitversion -config $VersionConfig -nofetch -output file -outputfile $VersionCacheFile | Out-Host
+        Write-Build Yellow "dotnet tool execute gitversion.tool -config $VersionConfig -nofetch -output file -outputfile $VersionCacheFile"
+        dotnet tool execute gitversion.tool -config $VersionConfig -nofetch -output file -outputfile $VersionCacheFile | Out-Host
 
         try {
             $local:GitVersion = Get-Content $VersionCacheFile | ConvertFrom-Json -ErrorAction Stop
-        }
-        catch {
-            Write-Warning "dotnet gitversion -config $VersionConfig -showconfig"
-            dotnet gitversion -config $VersionConfig -showconfig | Out-Host
+        } catch {
+            Write-Warning "dotnet tool execute gitversion.tool -config $VersionConfig -showconfig"
+            dotnet tool execute gitversion.tool -config $VersionConfig -showconfig | Out-Host
             Write-Warning "VersionTagPrefix: $($VersionTagPrefix)"
             Write-Warning "VersionMessagePrefix: $($VersionMessagePrefix)"
             Write-Warning 'git log --graph --format="%h %cr %d" --decorate --date=relative --all --remotes=* -n 100'

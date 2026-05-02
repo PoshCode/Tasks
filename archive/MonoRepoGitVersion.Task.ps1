@@ -142,7 +142,7 @@ Add-BuildTask MonoRepoGitVersion @{
             # NOTE: tag-prefix is NOT overridden here - each module's GitVersion.yml sets it correctly
             # (e.g. 'BicepFlex/v', 'LDAzOps/v') to match actual git tags. Overriding with the
             # lowercased project name would cause TaggedCommitVersionStrategy to find no tags.
-            dotnet gitversion -config $GitVersionYaml -output file -outputfile $ProjectVersionFile `
+            dotnet tool execute gitversion.tool -config $GitVersionYaml -output file -outputfile $ProjectVersionFile `
                 -overrideconfig major-version-bump-message="semver-$($Project.Name):\s*(breaking|major)" `
                 -overrideconfig minor-version-bump-message="semver-$($Project.Name):\s*(feature|minor)" `
                 -overrideconfig patch-version-bump-message="semver-$($Project.Name):\s*(fix|patch)" `

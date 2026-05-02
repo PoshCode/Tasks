@@ -36,7 +36,7 @@ Add-BuildTask Pack-UniversalPackage @{
                 "--target-directory=$($script:UniversalPackageRoot)"
             )
             Write-Build Yellow "dotnet pgutil upack create $($Options -join ' ')"
-            dotnet pgutil upack create @options
+            dotnet tool execute pgutil upack create @options
         }
         # pgutil packages upload --feed=build-output --input-file=..\DevOpsScripts-Upack-Demo-0.0.0-rc.1+sha.df5b663.260206.upack --source=https://nuget.loandepot.com --api-key=04f1ab532b9397408b349e83420c762ac42eb98d
     }

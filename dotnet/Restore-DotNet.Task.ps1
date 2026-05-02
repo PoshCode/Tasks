@@ -19,10 +19,10 @@ Add-BuildTask Restore-DotNet @{
     # }
     Jobs = "Install-DotNetTool", {
         $local:options = @{} + $script:dotnetOptions
-        # We're doing this for case-sensitive reasons
-        if (($NugetConfig = Get-ChildItem $BuildRoot -Filter "[Nn]u[Gg]et.config")) {
-            $options["-configfile"] = $NugetConfig.FullName
+        if ($script:NugetConfigFile) {
+            $options["-configfile"] = $script:NugetConfigFile
         }
+
         Write-Build Yellow "dotnet restore $DotNetSolutionFile $(($options.GetEnumerator().ForEach({"$($_.key) $($_.value)"})) -join ' ')"
 
         # dotnet restore $DotNetSolutionFile @options

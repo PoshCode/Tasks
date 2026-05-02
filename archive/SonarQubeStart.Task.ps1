@@ -1,7 +1,7 @@
 Add-BuildTask SonarQubeStart @{
     If   = { $script:SonarProjectKey -and $script:SonarToken }
     Jobs = "Get-Version", {
-        dotnet sonarscanner begin `
+        dotnet tool execute sonarscanner begin `
             -key:"$($Script:SonarProjectKey)" `
             -version:"$(${script:Version}.SemVer)" `
             -d:"sonar.token=${script:SonarToken}" `
