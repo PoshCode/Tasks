@@ -8,7 +8,7 @@ Add-BuildTask Test-PowerShellSyntax @{
     }
     Inputs  = {
         # Build Output
-        Get-ChildItem $ModuleOutputPath -Recurse -File
+        Get-ChildItem $ModuleOutputRoot -Recurse -File
         # Test Source
         $Tests = Join-Path $BuildRoot [Tt]ests | Resolve-Path
         Get-ChildItem $Tests -Recurse -File -Filter *.tests.ps1
@@ -23,7 +23,7 @@ Add-BuildTask Test-PowerShellSyntax @{
                 "$BuildTasksRoot/PSScriptAnalyzerSettings.psd1"
             ) | Select-Object -First 1 -ExpandProperty FullName
         }
-        $Files = Get-ChildItem $ModuleOutputPath -Recurse -File -Filter *.ps*1
+        $Files = Get-ChildItem $ModuleOutputRoot -Recurse -File -Filter *.ps*1
 
         "Analyzing $($Files -join "`n          ")"
         $results = $Files | Invoke-ScriptAnalyzer @ScriptAnalyzer

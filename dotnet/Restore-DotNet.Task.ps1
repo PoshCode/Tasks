@@ -15,7 +15,7 @@ Add-BuildTask Restore-DotNet @{
     # }
     # Outputs = {
     #     # Return corresponding project.assets.json files
-    #     $Project.BaseIntermediateOutputPath | Join-Path -ChildPath "project.assets.json"
+    #     $Project.BaseIntermediateOutputRoot | Join-Path -ChildPath "project.assets.json"
     # }
     Jobs = "Install-DotNetTool", {
         $local:options = @{} + $script:dotnetOptions

@@ -10,7 +10,7 @@ param(
     $Extends,
     # dotnet build configuration parameter (Debug or Release)
     [ValidateSet('Debug', 'Release')]
-    [string]$Configuration = 'Release',
+    [string]$Configuration = ($Env:IB_CONFIGURATION ?? 'Release'),
 
     # Solution to build -- accepts a name, a glob pattern, or a path (relative or full) to a .sln file.
     [ArgumentCompleter({
@@ -81,11 +81,11 @@ Enter-Build {
     }
     $script:SolutionName = Split-Path $script:DotNetSolutionFile -LeafBase
     # This is used in Directory.build.props to configure the root output directory for dotnet
-    $Env:IB_OUTPUT_ROOT ??= $script:OutputPath
+    $Env:IB_OUTPUT_ROOT ??= $script:OutputRoot
 
-    $script:DotNetPublishRoot ??= Join-Path $script:OutputPath publish
-    $script:DotNetPackRoot ??= Join-Path $script:OutputPath nuget
-    $script:SolutionOutputPath ??= Join-Path $script:OutputPath $script:SolutionName
+    $script:DotNetPublishRoot ??= Join-Path $script:OutputRoot publish
+    $script:DotNetPackRoot ??= Join-Path $script:OutputRoot nuget
+    $script:SolutionOutputRoot ??= Join-Path $script:OutputRoot $script:SolutionName
 
     $script:SolutionTestResultsRoot = Join-Path $Script:TestResultsRoot $script:SolutionName
     $script:DotNetVersion ??= $Env:DOTNET_VERSION ?? (dotnet --version)
@@ -104,7 +104,7 @@ Enter-Build {
                 PSTypeName                 = "DotNet.Project"
                 Path                       = $_
                 # The rest of these properties MUST BE populated by getProperty in the Restore task
-                BaseIntermediateOutputPath = Join-Path $script:SolutionOutputPath "obj/$BaseName"
+                BaseIntermediateOutputRoot = Join-Path $script:SolutionOutputRoot "obj/$BaseName"
                 AssemblyName               = $BaseName
                 IsPackable                 = [Nullable[bool]]$null
                 IsPublishable              = [Nullable[bool]]$null
@@ -130,7 +130,7 @@ Enter-Build {
     Write-Build Cyan "  TargetFramework: $script:TargetFramework"
     Write-Build Cyan "  TargetRuntime: $script:TargetRuntime"
     Write-Build Cyan "  DotNetSolutionFile: $script:DotNetSolutionFile"
-    Write-Build Cyan "  SolutionOutputPath: $script:SolutionOutputPath"
+    Write-Build Cyan "  SolutionOutputRoot: $script:SolutionOutputRoot"
     Write-Build Cyan "  DotNetPublishRoot: $DotNetPublishRoot"
     Write-Build Cyan "  DotNetPackRoot: $DotNetPackRoot"
     Write-Build Cyan "  SolutionTestResultsRoot: $SolutionTestResultsRoot"

@@ -3,25 +3,25 @@ Add-BuildTask Build-Module @{
         @(
             Get-ChildItem -Path $BuildRoot -Recurse -Filter *.ps*
             Get-ChildItem -Path $BuildRoot -Recurse -Filter *.cs | Where-Object FullName -NotLike "*/obj/*"
-        ) | Where-Object FullName -NotLike (Join-Path $script:OutputPath /*)
+        ) | Where-Object FullName -NotLike (Join-Path $script:OutputRoot /*)
     }
     # don't take off the script block, need to resolve AFTER init
     Outputs = {
         $InputObject = $_
         switch -regex ("$InputObject") {
             "ps1$" {
-                $script:ModuleOutputPath
+                $script:ModuleOutputRoot
             }
             "cs$" {
-                if ($out -and ($Assemblies = Get-ChildItem -Path $script:OutputPath -Recurse -Filter *.dll -ErrorAction Ignore)) {
+                if ($out -and ($Assemblies = Get-ChildItem -Path $script:OutputRoot -Recurse -Filter *.dll -ErrorAction Ignore)) {
                     $Assemblies
                 } else {
-                    Join-Path $script:ModuleOutputPath lib
+                    Join-Path $script:ModuleOutputRoot lib
                 }
             }
             default {
                 # .psd1, .psm1, .pssc etc — use the output directory as the comparison target
-                $script:OutputPath
+                $script:OutputRoot
             }
         }
     }
@@ -42,7 +42,7 @@ Add-BuildTask Build-Module @{
                 })
         }
 
-        $Module = Build-Module -Output $script:OutputPath -UnversionedOutputDirectory @version -Passthru -Verbose:($VerbosePreference -eq "Continue")
+        $Module = Build-Module -Output $script:OutputRoot -UnversionedOutputDirectory @version -Passthru -Verbose:($VerbosePreference -eq "Continue")
 
         # If there's output from a DotNetPublish task, copy it into a "lib" folder in the module output
         if ($DotNetPublishRoot -and (Test-Path $DotNetPublishRoot)) {
@@ -57,6 +57,6 @@ Add-BuildTask Build-Module @{
 
         $script:ModuleName = $Module.Name
         $script:ManifestPath = $Module.Path
-        $script:ModuleOutputPath = Split-Path $Module.Path
+        $script:ModuleOutputRoot = Split-Path $Module.Path
     }
 }

@@ -17,6 +17,18 @@ param(
 )
 Push-Location -StackName BootStrap
 
+$script:ErrorView = "DetailedView"
+$script:InformationPreference = "Continue"
+$script:ErrorActionPreference = "Stop"
+
+# Force distinct colors for Verbose and Debug
+if ($PSStyle.Formatting.Verbose -eq $PSStyle.Formatting.Warning) {
+    $PSStyle.Formatting.Verbose = $PSStyle.Foreground.BrightCyan
+}
+if ($PSStyle.Formatting.Debug -eq $PSStyle.Formatting.Warning) {
+    $PSStyle.Formatting.Debug = $PSStyle.Foreground.BrightGreen
+}
+
 & "$PSScriptRoot/Install-PowerShellModule.ps1" $Path
 
 Pop-Location -StackName BootStrap

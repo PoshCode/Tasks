@@ -2,17 +2,17 @@ Add-BuildTask Test-Helm @{
     Inputs  = { Get-ChildItem $script:HelmCharts -File -Recurse }
     Outputs = {
         foreach ($chart in $script:HelmCharts) {
-            Join-Path $script:helmOutputPath "$($Chart.Name)-compiled.yaml"
+            Join-Path $script:helmOutputRoot "$($Chart.Name)-compiled.yaml"
         }
     }
     Jobs    = "Build-Helm", {
         # helm lint requires the chart directory, not the chart.yaml file
         Set-Location $script:HelmChartRoot
-        New-Item $script:helmOutputPath -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+        New-Item $script:helmOutputRoot -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
         # each $chart is a directory object
         foreach ($chart in $script:HelmCharts) {
             $TestValues = Join-Path $chart values.yaml
-            $CompiledOutput = Join-Path $script:helmOutputPath "$($Chart.Name)-compiled.yaml"
+            $CompiledOutput = Join-Path $script:helmOutputRoot "$($Chart.Name)-compiled.yaml"
 
             Write-Build Yellow "helm lint $($Chart.FullName) --values $TestValues"
             Invoke-Native { helm lint $chart.FullName --values $TestValues } -ExceptionalExit

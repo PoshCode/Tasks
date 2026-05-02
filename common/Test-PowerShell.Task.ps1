@@ -2,7 +2,7 @@
 #requires -Module @{ ModuleName = "Pester"; ModuleVersion = "5.6.0" }
 Add-BuildTask Test-PowerShell @{
     Inputs  = {
-        Get-ChildItem $ModuleOutputPath -Recurse -File
+        Get-ChildItem $ModuleOutputRoot -Recurse -File
         $Tests = Join-Path $BuildRoot [Tt]ests | Resolve-Path
         Get-ChildItem $Tests -Recurse -File -Filter *.tests.ps1
     }
@@ -18,11 +18,11 @@ Add-BuildTask Test-PowerShell @{
     }, {
 
         # For PowerShell Modules with classes to work in tests:
-        # 1. The $OutputPath directory must be first on Env:PSModulePath
-        # 2. The $ModuleName directory must be in $OutputPath directory
+        # 1. The $OutputRoot directory must be first on Env:PSModulePath
+        # 2. The $ModuleName directory must be in $OutputRoot directory
         # 3. The $ModuleName.psd1 file must be in the $ModuleName directory
         if (Test-Path $script:ManifestPath) {
-            $Env:PSModulePath = @($script:OutputPath) + @($Env:PSModulePath -split [IO.Path]::PathSeparator -ne $script:OutputPath) -join ([IO.Path]::PathSeparator)
+            $Env:PSModulePath = @($script:OutputRoot) + @($Env:PSModulePath -split [IO.Path]::PathSeparator -ne $script:OutputRoot) -join ([IO.Path]::PathSeparator)
             Write-Output (@(
                     "Set PSModulePath:"
                     $Env:PSModulePath
@@ -44,7 +44,7 @@ Add-BuildTask Test-PowerShell @{
             Filter       = $PesterFilter
             TestResult   = @{
                 Enabled    = $true
-                OutputPath = Join-Path $ModuleTestResultsRoot "results.xml"
+                OutputRoot = Join-Path $ModuleTestResultsRoot "results.xml"
             }
             Debug        = @{
                 ShowNavigationMarkers = $Host.Name -match "Visual Studio Code"
@@ -56,7 +56,7 @@ Add-BuildTask Test-PowerShell @{
             }
             CodeCoverage = @{
                 Enabled               = !$SkipCoverage
-                Path                  = Get-Item $ModuleOutputPath\*.psm1, $ModuleOutputPath\*.ps1
+                Path                  = Get-Item $ModuleOutputRoot\*.psm1, $ModuleOutputRoot\*.ps1
                 OutputPath            = Join-Path $ModuleTestResultsRoot "coverage.xml"
                 CoveragePercentTarget = $CodeCoveragePercentTarget * 100
                 UseBreakpoints        = $false

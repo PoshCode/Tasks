@@ -12,7 +12,7 @@ param(
     $Extends,
 
     # Name of the PowerShell module (defaults to the directory/project name)
-    [string]$ModuleName,
+    [string]$ModuleName = $Env:IB_MODULE_NAME,
 
     # Name of the PSRepository to publish to
     [string]$PSRepository = "DevOpsPowerShell",
@@ -58,18 +58,18 @@ Enter-Build {
         $script:ModuleName = Split-Path $BuildRoot -Leaf
     }
 
-    $script:ModuleOutputPath = Join-Path $script:OutputPath $script:ModuleName
-    $script:ManifestPath = Join-Path $script:ModuleOutputPath "$script:ModuleName.psd1"
+    $script:ModuleOutputRoot = Join-Path $script:OutputRoot $script:ModuleName
+    $script:ManifestPath = Join-Path $script:ModuleOutputRoot "$script:ModuleName.psd1"
     $script:ModuleTestResultsRoot = Join-Path $Script:TestResultsRoot $script:ModuleName
     New-Item -Type Directory -Path $script:ModuleTestResultsRoot -Force | Out-Null
 
-    Write-Build Cyan "  ModuleName   [$script:ModuleName]"
-    Write-Build Cyan "  ModuleOutputPath   [$script:ModuleOutputPath]"
+    Write-Build Cyan "  ModuleName: $script:ModuleName"
+    Write-Build Cyan "  ModuleOutputRoot: $script:ModuleOutputRoot"
 
     $script:SourcePath ??= (Join-Path $BuildRoot src), (Join-Path $BuildRoot source), (Join-Path $BuildRoot $script:ModuleName) |
         Convert-Path -ErrorAction Ignore | Select-Object -First 1
 
-    Write-Build Cyan "  PSRepository [$script:PSRepository]"
+    Write-Build Cyan "  PSRepository: $script:PSRepository"
 
     # Register PSRepository if a publish URI is provided and it isn't already registered correctly
     if ($script:PowerShellModulePublishUri -and $script:PSRepository) {

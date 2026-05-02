@@ -12,7 +12,7 @@ Add-BuildTask Package-Helm @{
     }
     Jobs    = "Get-Version", "Test-Helm", {
         foreach ($Chart in $script:HelmCharts) {
-            $Destination = Join-Path $script:helmOutputPath $Chart.Name
+            $Destination = Join-Path $script:helmOutputRoot $Chart.Name
             New-Item $Destination -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
             $options = @(
                 "--destination", $Destination,

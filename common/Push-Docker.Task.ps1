@@ -1,7 +1,7 @@
 Add-BuildTask Push-Docker @{
     Inputs  = {
         # Docker metadata files created by DockerBuild task
-        $MetadataFiles = Get-ChildItem (Join-Path $script:OutputPath "docker") -Filter "*-metadata.json" -ErrorAction SilentlyContinue
+        $MetadataFiles = Get-ChildItem (Join-Path $script:OutputRoot "docker") -Filter "*-metadata.json" -ErrorAction SilentlyContinue
         if ($MetadataFiles) {
             $MetadataFiles.FullName
         }
@@ -11,11 +11,11 @@ Add-BuildTask Push-Docker @{
     }
     Outputs = {
         # Create a marker file for each pushed image
-        $MetadataFiles = Get-ChildItem (Join-Path $script:OutputPath "docker") -Filter "*-metadata.json" -ErrorAction SilentlyContinue
+        $MetadataFiles = Get-ChildItem (Join-Path $script:OutputRoot "docker") -Filter "*-metadata.json" -ErrorAction SilentlyContinue
         if ($MetadataFiles) {
             $MetadataFiles.ForEach({
                     $ProjectName = $_.BaseName -replace '-metadata$', ''
-                    Join-Path $script:OutputPath "docker/$ProjectName-pushed.txt"
+                    Join-Path $script:OutputRoot "docker/$ProjectName-pushed.txt"
                 })
         }
         else {
@@ -24,7 +24,7 @@ Add-BuildTask Push-Docker @{
     }
     Jobs    = "Connect-AzACR", {
         if ($script:PushEnabled) {
-            $script:DockerMetadataRoot = Join-Path $script:OutputPath "docker"
+            $script:DockerMetadataRoot = Join-Path $script:OutputRoot "docker"
 
             $MetadataFiles = Get-ChildItem $script:DockerMetadataRoot -Filter "*-metadata.json" -ErrorAction SilentlyContinue
 

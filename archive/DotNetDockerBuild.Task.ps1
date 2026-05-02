@@ -11,7 +11,7 @@ Add-BuildTask DotNetDockerBuild @{
         if ($PublishedDockerFiles) {
             $PublishedDockerfiles.ForEach({
                     $Project = $_.DirectoryName
-                    Join-Path $script:OutputPath "docker/$Project-metadata.json"
+                    Join-Path $script:OutputRoot "docker/$Project-metadata.json"
                 })
         } else {
             $BuildRoot
@@ -24,7 +24,7 @@ Add-BuildTask DotNetDockerBuild @{
 ========
     Jobs    = "Get-Version", "Publish-DotNet", "Connect-AzACR", {
 >>>>>>>> c4aeb6a (Move Tasks and Update Documentation (#29)):archive/DotNetDockerBuild.Task.ps1
-        $script:DockerMetadataRoot = New-Item (Join-Path $script:OutputPath "docker") -ItemType Directory -Force -ErrorAction SilentlyContinue | Convert-Path
+        $script:DockerMetadataRoot = New-Item (Join-Path $script:OutputRoot "docker") -ItemType Directory -Force -ErrorAction SilentlyContinue | Convert-Path
         $PublishedDockerfiles = Get-ChildItem $script:DotNetPublishRoot -Recurse -File -Filter "Dockerfile" -ErrorAction SilentlyContinue
 
         foreach ($Dockerfile in $PublishedDockerfiles) {

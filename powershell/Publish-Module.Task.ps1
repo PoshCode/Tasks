@@ -4,7 +4,7 @@ Add-BuildTask Publish-Module {
         -not [string]::IsNullOrWhiteSpace($Script:PowerShellModulePublishKey)) {
 
         $publishModuleSplat = @{
-            Path        = $Script:ModuleOutputPath
+            Path        = $Script:ModuleOutputRoot
             NuGetApiKey = $Script:PowerShellModulePublishKey
             Verbose     = $true
             Force       = $true
@@ -12,10 +12,10 @@ Add-BuildTask Publish-Module {
             ErrorAction = 'Stop'
         }
         "Files in module output:"
-        Get-ChildItem $Script:ModuleOutputPath -Recurse -File |
+        Get-ChildItem $Script:ModuleOutputRoot -Recurse -File |
             Select-Object -Expand FullName
 
-        "Publishing [$Script:ModuleOutputPath] to [$Script:PSRepository]"
+        "Publishing [$Script:ModuleOutputRoot] to [$Script:PSRepository]"
 
         Publish-Module @publishModuleSplat
     } else {

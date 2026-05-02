@@ -1,4 +1,4 @@
-$script:VersionCacheFile = "$Script:OutputPath/version.json"
+$script:VersionCacheFile = "$Script:OutputRoot/version.json"
 $script:Version = @{}
 
 <# NOTE: this version does not include support for multiple versions per-repo  #>
@@ -7,8 +7,8 @@ Add-BuildTask Get-Version @{
         $head = git rev-parse HEAD
         # If there's an existing GitVersion in output, load it
         if (${script:Version}.Sha -ne $head) {
-            ${script:Version} = if (Test-Path $Script:OutputPath/version.json) {
-                Get-Content $Script:OutputPath/version.json | ConvertFrom-Json
+            ${script:Version} = if (Test-Path $Script:OutputRoot/version.json) {
+                Get-Content $Script:OutputRoot/version.json | ConvertFrom-Json
             }
         }
         # Skip if ${script:Version} is set correctly for this commit...
@@ -21,7 +21,7 @@ Add-BuildTask Get-Version @{
         | Select-Object -First 1
 
         # agent temp SHOULD be cleaned after each pipeline job
-        $VersionCacheFile = "$TempDirectory/version.json"
+        $VersionCacheFile = "$TempRoot/version.json"
 
         # Delete the VersionCache so that importing it will fail if gitversion fails
         if (Test-Path $VersionCacheFile) {
@@ -53,7 +53,7 @@ Add-BuildTask Get-Version @{
         Write-Build Gray "Version Tag: $(($script:Version).Tag)"
 
         # Cache the final object in output so we can skip rerunning
-        ${script:Version} | ConvertTo-Json -Compress | Out-File $Script:OutputPath/version.json
+        ${script:Version} | ConvertTo-Json -Compress | Out-File $Script:OutputRoot/version.json
 
         if ($Script:BuildSystem -ieq "AzureDevOps") {
             # Replace "$(Gitversion.*)" tokens in the BuildNumber (AKA name)

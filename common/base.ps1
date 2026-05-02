@@ -74,10 +74,10 @@ $script:BuildSystem = if (Test-Path Env:HARNESS_STAGE_ID) {
     "None"
 }
 
-Write-Information "$($PSStyle.Foreground.BrightBlue)  BuildSystem [$BuildSystem]$($PSStyle.Reset)"
-Write-Information "$($PSStyle.Foreground.BrightBlue)  Information [$InformationPreference]$($PSStyle.Reset)"
-Write-Information "$($PSStyle.Foreground.BrightBlue)  Verbose [$VerbosePreference]$($PSStyle.Reset)"
-Write-Information "$($PSStyle.Foreground.BrightBlue)  Debug [$DebugPreference]$($PSStyle.Reset)"
+Write-Information "$($PSStyle.Foreground.BrightBlue)  BuildSystem: $BuildSystem$($PSStyle.Reset)"
+Write-Information "$($PSStyle.Foreground.BrightBlue)  Information: $InformationPreference$($PSStyle.Reset)"
+Write-Information "$($PSStyle.Foreground.BrightBlue)  Verbose: $VerbosePreference$($PSStyle.Reset)"
+Write-Information "$($PSStyle.Foreground.BrightBlue)  Debug: $DebugPreference$($PSStyle.Reset)"
 
 # A little extra BuildEnvironment magic
 Set-BuildHeader { Write-Build 11 "Start Task: $($args[0])" }
@@ -88,7 +88,7 @@ Set-BuildFooter { Write-Build 11 "Finish Task: $($args[0]) $($Task.Elapsed) [Tot
 ${script:/} = [IO.Path]::DirectorySeparatorChar
 
 # BuildRoot is provided by Invoke-Build
-Write-Information "$($PSStyle.Foreground.BrightBlue)  BuildRoot [$BuildRoot]$($PSStyle.Reset)"
+Write-Information "$($PSStyle.Foreground.BrightBlue)  BuildRoot: $BuildRoot$($PSStyle.Reset)"
 
 # Enter-Build runs only when actually building (not during ??, ?, or WhatIf).
 # Each script in the Extends tree gets its own Enter-Build invoked with its $BuildRoot.
@@ -109,17 +109,17 @@ Enter-Build {
     [string]$script:PipelineId = $script:PipelineId ?? $Env:PIPELINE_ID ?? $Env:HARNESS_PIPELINE_ID ?? $Env:PLUGIN_PIPELINE ?? "local build"
     [string]$script:PipelineExecutionId = $script:PipelineExecutionId ?? $Env:PIPELINE_EXECUTION_ID ?? $Env:BUILD_ID ?? $Env:HARNESS_EXECUTION_ID ?? $Env:HARNESS_BUILD_ID ?? $Env:DRONE_BUILD_NUMBER ?? "0"
 
-    Write-Information "$($PSStyle.Foreground.BrightBlue)  BranchName [$BranchName]$($PSStyle.Reset)"
-    Write-Information "$($PSStyle.Foreground.BrightBlue)  IsPullRequest [$IsPullRequest]$($PSStyle.Reset)"
+    Write-Information "$($PSStyle.Foreground.BrightBlue)  BranchName: $BranchName$($PSStyle.Reset)"
+    Write-Information "$($PSStyle.Foreground.BrightBlue)  IsPullRequest: $IsPullRequest$($PSStyle.Reset)"
     if ($IsPullRequest) {
-        Write-Information "$($PSStyle.Foreground.BrightBlue)  PullRequestId [$PullRequestId]$($PSStyle.Reset)"
-        Write-Information "$($PSStyle.Foreground.BrightBlue)  SourceBranch [$SourceBranch]$($PSStyle.Reset)"
-        Write-Information "$($PSStyle.Foreground.BrightBlue)  TargetBranch [$TargetBranch]$($PSStyle.Reset)"
+        Write-Information "$($PSStyle.Foreground.BrightBlue)  PullRequestId: $PullRequestId$($PSStyle.Reset)"
+        Write-Information "$($PSStyle.Foreground.BrightBlue)  SourceBranch: $SourceBranch$($PSStyle.Reset)"
+        Write-Information "$($PSStyle.Foreground.BrightBlue)  TargetBranch: $TargetBranch$($PSStyle.Reset)"
     }
     if ($BuildSystem -ne "None") {
-        Write-Information "$($PSStyle.Foreground.BrightBlue)  ProductName [$ProductName]$($PSStyle.Reset)"
-        Write-Information "$($PSStyle.Foreground.BrightBlue)  PipelineId [$PipelineId]$($PSStyle.Reset)"
-        Write-Information "$($PSStyle.Foreground.BrightBlue)  PipelineExecutionId [$PipelineExecutionId]$($PSStyle.Reset)"
+        Write-Information "$($PSStyle.Foreground.BrightBlue)  ProductName: $ProductName$($PSStyle.Reset)"
+        Write-Information "$($PSStyle.Foreground.BrightBlue)  PipelineId: $PipelineId$($PSStyle.Reset)"
+        Write-Information "$($PSStyle.Foreground.BrightBlue)  PipelineExecutionId: $PipelineExecutionId$($PSStyle.Reset)"
     }
     #>
 
@@ -136,20 +136,20 @@ Enter-Build {
 
     # Build-system information. There are a few different sources for the information
     # But each variable should have a default here:
-    $Script:OutputPath = $Env:BUILD_BINARIESDIRECTORY ??
-    $Env:IB_OUTPUT_PATH ??
+    $Script:OutputRoot = $Env:BUILD_BINARIESDIRECTORY ??
+    $Env:IB_OUTPUT_ROOT ??
     (Join-Path $BuildRoot 'Output')
-    New-Item -Type Directory -Path $OutputPath -Force | Out-Null
+    New-Item -Type Directory -Path $OutputRoot -Force | Out-Null
 
     $Script:TestResultsRoot = $script:TestResultsRoot ?? # An override for build script parameters
-    $Env:IB_TEST_ROOT ?? # An override for machine-level settings
+    $Env:IB_TEST_RESULTS_ROOT ?? # An override for machine-level settings
     $Env:TEST_RESULTS_DIRECTORY ??
-    (Join-Path $OutputPath testresults)
+    (Join-Path $OutputRoot testresults)
 
-    $Script:TempDirectory = @(Get-Content Env:IB_TEMP_DIRECTORY, Env:AGENT_TEMPDIRECTORY, Env:TEMP, Env:TMP -ErrorAction Ignore) |
+    $Script:TempRoot = @(Get-Content Env:IB_TEMP_ROOT, Env:AGENT_TEMPDIRECTORY, Env:TEMP, Env:TMP -ErrorAction Ignore) |
         Where-Object { Test-Path $_ } |
         Select-Object -First 1
-    if (-not $Script:TempDirectory) { $Script:TempDirectory = if ($IsLinux) { "/tmp" } else { [System.IO.Path]::GetTempPath() } }
+    if (-not $Script:TempRoot) { $Script:TempRoot = if ($IsLinux) { "/tmp" } else { [System.IO.Path]::GetTempPath() } }
 
     # If you need to install additional tools, we use Install-GitHubRelease
     # Set the Tools hashtable to @{ exe = "org", "project" }
@@ -160,16 +160,16 @@ Enter-Build {
     # }
     [hashtable]$Script:GHTools = @{} + ($Script:GHTools ?? @{})
 
-    $script:UniversalPackageRoot ??= Join-Path $script:OutputPath universal
+    $script:UniversalPackageRoot ??= Join-Path $script:OutputRoot universal
 
     # Allow a -Clean switch to add the "Clean-Output" task on the front
     if ($Clean -and -not ($BuildTask -eq "Clean-Output")) {
         $BuildTask = @("Clean-Output") + $BuildTask
     }
 
-    Write-Build Cyan "  Output [$OutputPath]"
+    Write-Build Cyan "  OutputRoot: $OutputRoot"
     Write-Build Cyan "  TestResultsRoot: $TestResultsRoot"
-    Write-Build Cyan "  TempDirectory: $TempDirectory"
+    Write-Build Cyan "  TempRoot: $TempRoot"
     Write-Build Cyan "  UniversalPackageRoot: $UniversalPackageRoot"
 
     # If we're skipping coverage, make sure there are no demands on passing
