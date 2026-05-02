@@ -52,7 +52,7 @@ Add-BuildTask Test-PowerShell @{
             Output       = @{
                 Verbosity  = if ($VerbosePreference -eq "Continue") { "Detailed" } else { "Normal" }
                 RenderMode = "Ansi"
-                CIFormat   = $BuildSystem
+                CIFormat   = $BuildSystem -ne "Earthly" ? $BuildSystem : "Auto"
             }
             CodeCoverage = @{
                 Enabled               = !$SkipCoverage
