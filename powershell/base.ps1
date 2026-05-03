@@ -84,17 +84,11 @@ Enter-Build {
     }
 }
 
-# Add the dotnet tasks to the common tasks
-$script:InitializeTasks = @(
-    # In CI pipelines (or if you specify $Clean)
-    if ($BuildSystem -ne "None" -or $Script:Clean) {
-        # Run the Clean-Output task before the rest of the build tasks
-        "Clean-Output"
-    }
-) + $InitializeTasks
+# Add the PowerShell tasks to the common tasks
+$script:InitializeTasks += @()
 
 # When we have dotnet combined in a PowerShell module
-# We need to build the module after the dotnet publish
+# We need to Build-Module AFTER Publish-DotNet
 # So that we can include the output assemblies in the module
 $script:BuildTasks += $BuildTasks -contains "Build-DotNet" ?
                     @("Publish-DotNet", "Build-Module") :
