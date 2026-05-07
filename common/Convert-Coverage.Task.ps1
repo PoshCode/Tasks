@@ -9,7 +9,8 @@ Add-BuildTask Convert-Coverage @{
             -reporttypes:'Html;MarkdownSummaryGithub;TextSummary' `
             -filefilters:'+*;-/_*' `
             -title:"$script:ProductName" `
-            -tag:"$(${script:Version}.InformationalVersion)"
+            -tag:"$(${script:Version}.InformationalVersion)" `
+            --yes
 
         switch ($script:BuildSystem) {
             "AzureDevOps" {

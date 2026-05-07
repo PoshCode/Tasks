@@ -11,7 +11,7 @@ Add-BuildTask Convert-Trx2JUnit @{
     }
     Jobs    = {
         Get-ChildItem $SolutionTestResultsRoot/*.trx | ForEach-Object -ThrottleLimit ([Environment]::ProcessorCount - 1) -Parallel {
-            dotnet tool execute trx2junit $_ | Select-String -Pattern "Converting\s'"
+            dotnet tool execute trx2junit $_  --yes | Select-String -Pattern "Converting\s'"
         }
     }
 }

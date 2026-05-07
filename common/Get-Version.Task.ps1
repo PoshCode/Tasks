@@ -29,7 +29,7 @@ Add-BuildTask Get-Version @{
         }
 
         Write-Build Yellow "dotnet tool execute gitversion.tool -config $VersionConfig -nofetch -output file -outputfile $VersionCacheFile"
-        dotnet tool execute gitversion.tool -config $VersionConfig -nofetch -output file -outputfile $VersionCacheFile | Out-Host
+        dotnet tool execute gitversion.tool -config $VersionConfig -nofetch -output file -outputfile $VersionCacheFile --yes | Out-Host
 
         try {
             $local:GitVersion = Get-Content $VersionCacheFile | ConvertFrom-Json -ErrorAction Stop
