@@ -188,12 +188,12 @@ $script:InitializeTasks = @(
     }
     # Note that we run *all* of the Install tasks via the alias which must be kept up to date
     "Install-All"
-    # Skip Get-Version if we're not in a git repo (yet -- e.g. initialize dependencies in a container)
-    if (Test-Path ".git") {
-        "Get-Version"
-    }
 )
-$script:BuildTasks = @()
+$script:BuildTasks = @(
+    # Get-Version should run first in Build, but not before
+    # Otherwise it complicates our ability to cache dependencies
+    "Get-Version"
+)
 $script:PublishTasks = @()
 $script:TestTasks = @()
 $script:PushTasks = @("Push-Docker")
