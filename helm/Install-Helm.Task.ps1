@@ -20,16 +20,22 @@ Add-BuildTask Install-Helm @{
         $HelmVersionShort = helm version --short
         Write-Build Gray "Helm version: $HelmVersionShort"
 
-        # Install helm-schema plugin if not already installed
-        # TODO: This will be a PITA for windows
-        if ('schema' -notin (helm plugin list | ForEach-Object { ($_ -split '\t')[0] })) {
-            # bug was introduced by owner of the helm-schema plugin in 0.23.0 and they "unreleased" it but didn't remove the latest tag on GitHub for it. So we have to pin to 0.22.0 for now until they fix it.
-            if ($HelmVersionShort -ilike "v4*") {
-                Write-Build Yellow "helm plugin install https://github.com/dadav/helm-schema --version 0.22.0 --verify=false"
-                helm plugin install https://github.com/dadav/helm-schema --version 0.22.0 --verify=false
-            } else {
-                Write-Build Yellow "helm plugin install https://github.com/dadav/helm-schema --version 0.22.0"
-                helm plugin install https://github.com/dadav/helm-schema --version 0.22.0
+        # Install helm-schema
+        if ($IsLinux -or $IsMacOS) {
+            # helm plugin install NEVER works if you don't have bash
+            if ('schema' -notin (helm plugin list | ForEach-Object { ($_ -split '\t')[0] })) {
+                # bug was introduced by owner of the helm-schema plugin in 0.23.0 and they "unreleased" it but didn't remove the latest tag on GitHub for it. So we have to pin to 0.22.0 for now until they fix it.
+                if ($HelmVersionShort -ilike "v4*") {
+                    Write-Build Yellow "helm plugin install https://github.com/dadav/helm-schema --version 0.22.0 --verify=false"
+                    helm plugin install https://github.com/dadav/helm-schema --version 0.22.0 --verify=false
+                } else {
+                    Write-Build Yellow "helm plugin install https://github.com/dadav/helm-schema --version 0.22.0"
+                    helm plugin install https://github.com/dadav/helm-schema --version 0.22.0
+                }
+            }
+        } else {
+            if (-not (Get-Command 'helm-schema' -ErrorAction Ignore)) {
+                Install-FromGithub "dadav/helm-schema"
             }
         }
     }

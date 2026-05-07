@@ -5,7 +5,7 @@ Add-BuildTask Install-FromGitHub @{
         foreach ($tool in $script:GHTools.keys) {
             if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
                 Write-Build Gray "Installing $tool..."
-                $script:GHTools[$tool] | &(Join-Path (Split-Path $PSScriptRoot) "scripts/Install-GithubRelease.ps1") -ErrorAction SilentlyContinue
+                $script:GHTools[$tool] | &(Join-Path (Split-Path $PSScriptRoot) "scripts" "Install-FromGitHub.ps1") -ErrorAction SilentlyContinue
             }
         }
     }

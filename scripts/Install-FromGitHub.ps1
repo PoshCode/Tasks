@@ -16,9 +16,9 @@
 
 .PROJECTURI https://github.com/Jaykul/FromGitHub
 
-.ICONURI 
+.ICONURI
 
-.EXTERNALMODULEDEPENDENCIES 
+.EXTERNALMODULEDEPENDENCIES
 
 .REQUIREDSCRIPTS
 
@@ -30,11 +30,11 @@
         1.5.2 - Fix metadata problems in published module and script
         1.5.1 - Fix a bug in SelectAssetByPlatform not using the order of OS and Architecture to select the best match.
         1.5.0 - Convert to a module with a build that exports the script
-        
+
 
 .PRIVATEDATA
 
-#> 
+#>
 
 
 
@@ -56,32 +56,32 @@ All these examples are (only) tested on Windows and WSL Ubuntu
 
 
 .EXAMPLE
-Install-GithubRelease FluxCD Flux2
+Install-FromGitHub FluxCD Flux2
 
 Install `Flux` from the https://github.com/FluxCD/Flux2 repository
 
 .EXAMPLE
-Install-GithubRelease earthly earthly
+Install-FromGitHub earthly earthly
 
 Install `earthly` from the https://github.com/earthly/earthly repository
 
 .EXAMPLE
-Install-GithubRelease junegunn fzf
+Install-FromGitHub junegunn fzf
 
 Install `fzf` from the https://github.com/junegunn/fzf repository
 
 .EXAMPLE
-Install-GithubRelease BurntSushi ripgrep
+Install-FromGitHub BurntSushi ripgrep
 
 Install `rg` from the https://github.com/BurntSushi/ripgrep repository
 
 .EXAMPLE
-Install-GithubRelease opentofu opentofu
+Install-FromGitHub opentofu opentofu
 
 Install `opentofu` from the https://github.com/opentofu/opentofu repository
 
 .EXAMPLE
-Install-GithubRelease twpayne chezmoi
+Install-FromGitHub twpayne chezmoi
 
 Install `chezmoi` from the https://github.com/twpayne/chezmoi repository
 
@@ -91,8 +91,8 @@ Install-GitHubRelease https://github.com/mikefarah/yq/releases/tag/v4.44.6
 Install `yq` version v4.44.6 from it's release on github.com
 
 .EXAMPLE
-Install-GithubRelease sharkdp/bat
-Install-GithubRelease sharkdp/fd
+Install-FromGitHub sharkdp/bat
+Install-FromGitHub sharkdp/fd
 
 Install `bat` and `fd` from their repositories
 
