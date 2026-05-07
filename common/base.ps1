@@ -138,13 +138,13 @@ Enter-Build {
     # But each variable should have a default here:
     $Script:OutputRoot = $Env:BUILD_BINARIESDIRECTORY ??
     $Env:IB_OUTPUT_ROOT ??
-    (Join-Path $BuildRoot 'Output')
+    (Join-Path $BuildRoot 'output')
     New-Item -Type Directory -Path $OutputRoot -Force | Out-Null
 
     $Script:TestResultsRoot = $script:TestResultsRoot ?? # An override for build script parameters
     $Env:IB_TEST_RESULTS_ROOT ?? # An override for machine-level settings
     $Env:TEST_RESULTS_DIRECTORY ??
-    (Join-Path $OutputRoot testresults)
+    (Join-Path $OutputRoot 'testresults')
 
     $Script:TempRoot = @(Get-Content Env:IB_TEMP_ROOT, Env:AGENT_TEMPDIRECTORY, Env:TEMP, Env:TMP -ErrorAction Ignore) |
         Where-Object { Test-Path $_ } |
