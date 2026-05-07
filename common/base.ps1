@@ -142,9 +142,9 @@ Enter-Build {
     New-Item -Type Directory -Path $OutputRoot -Force | Out-Null
 
     $Script:TestResultsRoot = $script:TestResultsRoot ?? # An override for build script parameters
-    $Env:IB_TEST_RESULTS_ROOT ?? # An override for machine-level settings
+    $Env:IB_RESULTS_ROOT ?? # An override for machine-level settings
     $Env:TEST_RESULTS_DIRECTORY ??
-    (Join-Path $OutputRoot 'testresults')
+    (Join-Path $OutputRoot 'results')
 
     $Script:TempRoot = @(Get-Content Env:IB_TEMP_ROOT, Env:AGENT_TEMPDIRECTORY, Env:TEMP, Env:TMP -ErrorAction Ignore) |
         Where-Object { Test-Path $_ } |
