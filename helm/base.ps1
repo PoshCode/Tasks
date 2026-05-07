@@ -29,7 +29,7 @@ Enter-Build {
 
     if ($script:HelmChartRoot) {
         $script:ACRName = $script:ACRName ?? $ENV:ACR_URI ?? "crazusw2dvosl1"
-        $script:helmOutputRoot = Join-Path $Script:OutputRoot "charts"
+        $script:HelmOutputRoot = Join-Path $Script:OutputRoot "charts"
         $script:ChartName ??= Get-ChildItem -Path $script:HelmChartRoot -File -Filter Chart.yaml -Recurse -Depth 1 | ForEach-Object { $_.Directory.Name }
         $script:HelmCharts = $script:ChartName | Join-Path -Path $script:HelmChartRoot -ChildPath { $_ } | Get-Item
         $script:GHTools.add("kubeconform", "https://github.com/yannh/kubeconform/releases/tag/v0.7.0")
@@ -37,7 +37,7 @@ Enter-Build {
         Write-Build Cyan "Initializing Helm task variables (HelmChartRoot: $script:HelmChartRoot)"
         Write-Build Cyan "  HelmChartRoot: $script:HelmChartRoot"
         Write-Build Cyan "  ACRName: $script:ACRName"
-        Write-Build Cyan "  helmOutputRoot: $script:helmOutputRoot"
+        Write-Build Cyan "  HelmOutputRoot: $script:HelmOutputRoot"
         Write-Build Cyan "  HelmCharts: $(($script:HelmCharts).Count)"
     }
 }

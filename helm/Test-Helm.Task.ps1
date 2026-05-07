@@ -2,17 +2,17 @@ Add-BuildTask Test-Helm @{
     Inputs  = { Get-ChildItem $script:HelmCharts -File -Recurse }
     Outputs = {
         foreach ($chart in $script:HelmCharts) {
-            Join-Path $script:helmOutputRoot "$($Chart.Name)-compiled.yaml"
+            Join-Path $script:HelmOutputRoot "$($Chart.Name)-compiled.yaml"
         }
     }
-    Jobs    = "Build-Helm", {
+    Jobs    = {
         # helm lint requires the chart directory, not the chart.yaml file
         Set-Location $script:HelmChartRoot
-        New-Item $script:helmOutputRoot -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+        New-Item $script:HelmOutputRoot -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
         # each $chart is a directory object
         foreach ($chart in $script:HelmCharts) {
             $TestValues = Join-Path $chart values.yaml
-            $CompiledOutput = Join-Path $script:helmOutputRoot "$($Chart.Name)-compiled.yaml"
+            $CompiledOutput = Join-Path $script:HelmOutputRoot "$($Chart.Name)-compiled.yaml"
 
             Write-Build Yellow "helm lint $($Chart.FullName) --values $TestValues"
             Invoke-Native { helm lint $chart.FullName --values $TestValues } -ExceptionalExit
@@ -23,9 +23,9 @@ Add-BuildTask Test-Helm @{
             # Shouldn't this be taken care of elsewhere as a pre-requisite?
             if (-not (Get-Command kubeconform -ErrorAction SilentlyContinue)) {
                 Write-Build Yellow "kubeconform not found, attempting installation..."
-                &(Join-Path $script:BuildTasksRoot "scripts" "Install-GithubRelease.ps1") -Org "yannh" -Repo "kubeconform" -Verbose -ErrorAction SilentlyContinue
+                &(Join-Path $script:BuildTasksRoot "scripts" "Install-FromGitHub.ps1") -Org "yannh" -Repo "kubeconform" -Verbose -ErrorAction SilentlyContinue
             }
-            # TODO: Why is this here? This should be handled by Install-FromGitHub
+
             Write-Build Yellow "kubeconform -strict -ignore-missing-schemas -schema-location default -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' "-verbose" -output pretty $CompiledOutput"
             Invoke-Native {
                 kubeconform -strict -ignore-missing-schemas -schema-location default -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' "-verbose" -output pretty $CompiledOutput

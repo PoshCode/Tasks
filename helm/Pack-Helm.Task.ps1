@@ -1,7 +1,7 @@
 # The actual helm command is helm package
 # But we alias it as pack and publish for consistency with other frameworks
 Add-BuildTask Pack-Helm Package-Helm
-Add-BuildTask Publish-Helm Pack-Helm
+Add-BuildTask Publish-Helm Package-Helm
 
 Add-BuildTask Package-Helm @{
     Inputs  = { Get-ChildItem $script:HelmCharts -File -Recurse }
@@ -10,9 +10,9 @@ Add-BuildTask Package-Helm @{
             Join-Path $Chart.FullName "$($Chart.Name)-$($script:Version.SemVer).tgz"
         }
     }
-    Jobs    = "Get-Version", "Test-Helm", {
+    Jobs    = "Get-Version", {
         foreach ($Chart in $script:HelmCharts) {
-            $Destination = Join-Path $script:helmOutputRoot $Chart.Name
+            $Destination = Join-Path $script:HelmOutputRoot $Chart.Name
             New-Item $Destination -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
             $options = @(
                 "--destination", $Destination,
