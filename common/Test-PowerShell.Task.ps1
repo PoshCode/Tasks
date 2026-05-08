@@ -1,15 +1,18 @@
 
 Add-BuildTask Test-PowerShell @{
     Inputs  = {
-        Get-ChildItem $ModuleOutputRoot -Recurse -File
-        $Tests = Join-Path $BuildRoot [Tt]ests | Resolve-Path
-        Get-ChildItem $Tests -Recurse -File -Filter *.tests.ps1
+        if ($ModuleOutputRoot) {
+            Get-ChildItem $ModuleOutputRoot -Recurse -File
+        }
+        if ($Tests = Join-Path $BuildRoot [Tt]ests | Resolve-Path -ErrorAction Ignore) {
+            Get-ChildItem $Tests -Recurse -File -Filter *.tests.ps1
+        }
     }
     Outputs = {
         if ($Clean) {
             $BuildRoot # guaranteed to be old
         } else {
-            Join-Path $ModuleTestResultsRoot "results.xml"
+            Join-Path ($script:ModuleTestResultsRoot ?? $script:TestResultsRoot) "results.xml"
         }
     }
     Jobs    = {
@@ -36,6 +39,11 @@ Add-BuildTask Test-PowerShell @{
                 ) -join "`n")
         }
 
+        # Wvoid depending on the PowerShell/base variables (but respect them if they are set)
+        $local:ModuleTestResultsRoot = $script:ModuleTestResultsRoot ?? $script:TestResultsRoot
+        $local:CoverageRoot = $script:ModuleOutputRoot ?? $script:OutputRoot
+        $local:SkipCoverage = $script:SkipCoverage -or -not $script:ModuleOutputRoot
+
         # But we don't need all that to run PowerShell tests ...
         $Configuration = @{
             Run          = @{
@@ -45,7 +53,7 @@ Add-BuildTask Test-PowerShell @{
             Filter       = $PesterFilter
             TestResult   = @{
                 Enabled    = $true
-                OutputRoot = Join-Path $ModuleTestResultsRoot "results.xml"
+                OutputPath = Join-Path $local:ModuleTestResultsRoot "results.xml"
             }
             Debug        = @{
                 ShowNavigationMarkers = $Host.Name -match "Visual Studio Code"
@@ -57,8 +65,8 @@ Add-BuildTask Test-PowerShell @{
             }
             CodeCoverage = @{
                 Enabled               = !$SkipCoverage
-                Path                  = Get-Item $ModuleOutputRoot\*.psm1, $ModuleOutputRoot\*.ps1
-                OutputPath            = Join-Path $ModuleTestResultsRoot "coverage.xml"
+                Path                  = Get-Item $local:CoverageRoot\*.psm1, $local:CoverageRoot\*.ps1
+                OutputPath            = Join-Path $local:ModuleTestResultsRoot "coverage.xml"
                 CoveragePercentTarget = $CodeCoveragePercentTarget * 100
                 UseBreakpoints        = $false
             }
