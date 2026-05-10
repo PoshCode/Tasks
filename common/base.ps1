@@ -68,7 +68,7 @@ $script:BuildSystem = if (Test-Path Env:HARNESS_STAGE_ID) {
     "GithubActions"
 } elseif (Test-Path Env:SYSTEM_TEAMFOUNDATIONCOLLECTIONURI) {
     "AzureDevops"
-} elseif (Test-Path Env:EARTHLY_GIT_BRANCH) {
+} elseif (Test-Path Env:EARTHLY_VERSION) {
     "Earthly"
 } else {
     "None"

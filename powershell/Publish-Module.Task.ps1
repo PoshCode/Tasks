@@ -22,7 +22,7 @@ Add-BuildTask Publish-Module {
         Write-Warning ("Skipping deployment: To deploy, ensure that...`n" +
             "`t* You are in a known build system (Current: $BuildSystem)`n" +
             "`t* You are committing to the main branch (Current: $BranchName) `n" +
-            "`t* The repository APIKey is defined in `$Script:PowerShellModulePublishKey (Current: $(![string]::IsNullOrWhiteSpace($Script:PowerShellModulePublishKey))) `n" +
+            "`t* The repository APIKey is in `$Script:PowerShellModulePublishKey (or Env:IB_PS_PUBLISH_KEY) (Current: $(![string]::IsNullOrWhiteSpace($Script:PowerShellModulePublishKey))) `n" +
             "`t* This is not a pull request")
     }
 }
