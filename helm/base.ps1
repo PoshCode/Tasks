@@ -13,7 +13,12 @@ param(
     [string]$HelmChartRoot,
 
     # Build specific charts by name, e.g. -ChartName "macpublicservice"
-    [string[]]$ChartName
+    [string[]]$ChartName,
+
+    [string]$ACRName = ($ENV:IB_ACR_NAME ?? "crazusw2dvosl1"),
+
+    [string]$HelmRepository = ($Env:IB_HELM_REPOSITORY ?? "oci://$ACRName.azurecr.io/helm")
+
 )
 
 # Redirect $BuildRoot to the derived (root) script's directory
@@ -28,7 +33,6 @@ Enter-Build {
     $script:HelmChartRoot = if (Test-Path $HelmChartRoot) { Convert-Path $HelmChartRoot }
 
     if ($script:HelmChartRoot) {
-        $script:ACRName = $script:ACRName ?? $ENV:ACR_URI ?? "crazusw2dvosl1"
         $script:HelmOutputRoot = Join-Path $Script:OutputRoot "charts"
         $script:ChartName ??= Get-ChildItem -Path $script:HelmChartRoot -File -Filter Chart.yaml -Recurse -Depth 1 | ForEach-Object { $_.Directory.Name }
         $script:HelmCharts = $script:ChartName | Join-Path -Path $script:HelmChartRoot -ChildPath { $_ } | Get-Item
@@ -36,9 +40,9 @@ Enter-Build {
 
         Write-Build Cyan "Initializing Helm task variables (HelmChartRoot: $script:HelmChartRoot)"
         Write-Build Cyan "  HelmChartRoot: $script:HelmChartRoot"
-        Write-Build Cyan "  ACRName: $script:ACRName"
         Write-Build Cyan "  HelmOutputRoot: $script:HelmOutputRoot"
         Write-Build Cyan "  HelmCharts: $(($script:HelmCharts).Count)"
+        Write-Build Cyan "  HelmRepository: $script:HelmRepository"
     }
 }
 #endregion

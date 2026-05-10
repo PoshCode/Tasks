@@ -42,11 +42,11 @@ param(
 
     # Sets framework for solution, included in build output path
     [ValidatePattern('^net\d+\.\d+$')]
-    $TargetFramework = "net10.0",
+    $TargetFramework = ($Env:DOTNET_TARGET_FRAMEWORK ?? ("net" + $script:DotNetVersion.Split(".")[0..1] -join ".")),
 
     # Sets runtime for solution, included in build output path
     [ValidateSet('linux-x64', 'win-x64', 'any')]
-    $TargetRuntime
+    $TargetRuntime = ($ENV:DOTNET_TARGET_RUNTIME ?? $Env:IB_TARGET_RUNTIME ?? ($IsLinux ? "linux-x64" : "win-x64"))
 )
 
 # Redirect $BuildRoot to the root script's directory
@@ -86,12 +86,11 @@ Enter-Build {
     $script:DotNetPublishRoot ??= Join-Path $script:OutputRoot publish
     $script:DotNetPackRoot ??= Join-Path $script:OutputRoot nuget
     $script:SolutionOutputRoot ??= Join-Path $script:OutputRoot $script:SolutionName
-
     $script:SolutionTestResultsRoot = Join-Path $Script:TestResultsRoot $script:SolutionName
-    $script:DotNetVersion ??= $Env:DOTNET_VERSION ?? (dotnet --version)
-    $script:TargetFramework ??= $Env:DOTNET_TARGET_FRAMEWORK ?? ("net" + $script:DotNetVersion.Split(".")[0..1] -join ".")
-    $script:TargetRuntime ??= $ENV:DOTNET_TARGET_RUNTIME ?? ($IsLinux ? "linux-x64" : "win-x64")
 
+    $script:DotNetVersion ??= $Env:DOTNET_VERSION ?? (dotnet --version)
+
+    # These environment variables aren't just inputs, they're used by our Directory.Build.props
     $ENV:IB_TARGET_RUNTIME = $script:TargetRuntime
     $ENV:IB_CONFIGURATION = $script:Configuration
 

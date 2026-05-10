@@ -19,7 +19,9 @@ param(
     [switch]$SkipCoverage,
 
     # The base goal is 85% code coverage
-    $PassingCodeCoverage = 0.85
+    $PassingCodeCoverage = 0.85,
+
+    [switch]$PushEnabled = ($Env:EARTHLY_PUSH -eq "true")
 )
 
 ## Guard against double-initialization in diamond inheritance
@@ -196,7 +198,7 @@ $script:BuildTasks = @(
 )
 $script:PublishTasks = @()
 $script:TestTasks = @()
-$script:PushTasks = @("Push-Docker")
+$script:PushTasks = @()
 $script:CheckpointTasks = @("Tag-Source")
 
 

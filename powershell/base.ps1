@@ -14,14 +14,11 @@ param(
     # Name of the PowerShell module (defaults to the directory/project name)
     [string]$ModuleName = $Env:IB_MODULE_NAME,
 
-    # Name of the PSRepository to publish to
-    [string]$PSRepository = "DevOpsPowerShell",
-
     # NuGet-compatible publish URI for the PS module repository
-    [string]$PowerShellModulePublishUri,
+    [string]$PSPublishUri,
 
     # API key for publishing to the PS module repository
-    [string]$PowerShellModulePublishKey,
+    [string]$PSPublishKey,
 
     # Pester filter hashtable (Tag, ExcludeTag, etc.)
     $PesterFilter,
@@ -35,53 +32,28 @@ if ($BuildRoots.Count -gt 1) {
     $BuildRoot = $BuildRoots[-1]
 }
 
-# Assign params to script scope early -- task If conditions evaluate at definition time
-$script:ModuleName ??= $ModuleName
-$script:PSRepository ??= $PSRepository
-
 Enter-Build {
-    # Resolve credentials and repository from environment if not passed as parameters
-    $script:PSRepository = Get-Content Variable:PSRepository, Env:PSREPOSITORY -ErrorAction Ignore |
-        Select-Object -First 1
-    if (-not $script:PSRepository) { $script:PSRepository = "DevOpsPowerShell" }
-
-    $script:PowerShellModulePublishUri = Get-Content Variable:PowerShellModulePublishUri,
-    Env:IB_PS_PUBLISH_URI -ErrorAction Ignore |
-        Select-Object -First 1
-
-    $script:PowerShellModulePublishKey = Get-Content Variable:PowerShellModulePublishKey,
-    Env:IB_PS_PUBLISH_KEY -ErrorAction Ignore |
-        Select-Object -First 1
-
     # Default ModuleName to the project folder name
     if (-not $script:ModuleName) {
         $script:ModuleName = Split-Path $BuildRoot -Leaf
     }
 
+    $script:PSPublishUri ??= $Env:IB_PS_PUBLISH_URI
+    $script:PSPublishKey ??= $Env:IB_PS_PUBLISH_KEY
+
     $script:ModuleOutputRoot = Join-Path $script:OutputRoot $script:ModuleName
-    $script:ManifestPath = Join-Path $script:ModuleOutputRoot "$script:ModuleName.psd1"
+    New-Item -Type Directory -Path $script:ModuleOutputRoot -Force | Out-Null
+    $script:PSPackageRoot = Join-Path $script:OutputRoot pspkg
+    New-Item -Type Directory -Path $script:PSPackageRoot -Force | Out-Null
     $script:ModuleTestResultsRoot = Join-Path $Script:TestResultsRoot $script:ModuleName
     New-Item -Type Directory -Path $script:ModuleTestResultsRoot -Force | Out-Null
+    $script:ManifestPath = Join-Path $script:ModuleOutputRoot "$script:ModuleName.psd1"
 
     Write-Build Cyan "  ModuleName: $script:ModuleName"
     Write-Build Cyan "  ModuleOutputRoot: $script:ModuleOutputRoot"
 
     $script:SourcePath ??= (Join-Path $BuildRoot src), (Join-Path $BuildRoot source), (Join-Path $BuildRoot $script:ModuleName) |
         Convert-Path -ErrorAction Ignore | Select-Object -First 1
-
-    Write-Build Cyan "  PSRepository: $script:PSRepository"
-
-    # Register PSRepository if a publish URI is provided and it isn't already registered correctly
-    if ($script:PowerShellModulePublishUri -and $script:PSRepository) {
-        $existing = Get-PSRepository -Name $script:PSRepository -ErrorAction Ignore
-        if (-not $existing -or $existing.PublishLocation -ne $script:PowerShellModulePublishUri) {
-            if ($existing) { Unregister-PSRepository -Name $script:PSRepository }
-            Register-PSRepository -Name $script:PSRepository `
-                -SourceLocation $script:PowerShellModulePublishUri `
-                -PublishLocation $script:PowerShellModulePublishUri `
-                -InstallationPolicy Trusted
-        }
-    }
 }
 
 # Add the PowerShell tasks to the common tasks
@@ -93,10 +65,9 @@ $script:InitializeTasks += @()
 $script:BuildTasks += $BuildTasks -contains "Build-DotNet" ?
                     @("Publish-DotNet", "Build-Module") :
                     @("Build-Module")
-# TODO: Need to separate package & push
-$script:PublishTasks += @()
+$script:PublishTasks += @("Publish-Module")
 $script:TestTasks += @("Import-Module", "Test-PowerShell", "Test-PowerShellSyntax")
-$script:PushTasks += @("Publish-Module")
+$script:PushTasks += @("Push-Module")
 $script:CheckpointTasks += @()
 
 foreach ($taskfile in Get-ChildItem -Path $PSScriptRoot -Filter *.Task.ps1) {
