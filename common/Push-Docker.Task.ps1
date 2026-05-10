@@ -1,4 +1,7 @@
 Add-BuildTask Push-Docker @{
+    # TODO: This should NOT be using metadata files
+    # TODO: This should work against GHCR (GitHub Container Registry), not require ACR
+    If      = { $ACRName -and $ACRUri }
     Inputs  = {
         # Docker metadata files created by DockerBuild task
         $MetadataFiles = Get-ChildItem (Join-Path $script:OutputRoot "docker") -Filter "*-metadata.json" -ErrorAction SilentlyContinue

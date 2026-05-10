@@ -1,4 +1,5 @@
 Add-BuildTask Connect-AzACR @{
+    If   = { $ACRName -and $ACRUri }
     Jobs = {
         if ($env:AZURE_ACCESS_TOKEN) {
             # Pipeline path: use the OIDC plugin token directly
