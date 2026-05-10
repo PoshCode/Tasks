@@ -1,4 +1,4 @@
-<#
+<# Invoke-Build 5.14.23
 Copyright (c) Roman Kuzmin
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use
