@@ -15,10 +15,10 @@ param(
     [string]$ModuleName = $Env:IB_MODULE_NAME,
 
     # NuGet-compatible publish URI for the PS module repository
-    [string]$PSPublishUri,
+    [string]$PSPublishUri = ($Env:IB_PS_PUBLISH_URI ?? "https://www.powershellgallery.com/api/v2/package/"),
 
     # API key for publishing to the PS module repository
-    [string]$PSPublishKey,
+    [string]$PSPublishKey = $Env:IB_PS_PUBLISH_KEY,
 
     # Pester filter hashtable (Tag, ExcludeTag, etc.)
     $PesterFilter,
@@ -37,9 +37,6 @@ Enter-Build {
     if (-not $script:ModuleName) {
         $script:ModuleName = Split-Path $BuildRoot -Leaf
     }
-
-    $script:PSPublishUri ??= $Env:IB_PS_PUBLISH_URI
-    $script:PSPublishKey ??= $Env:IB_PS_PUBLISH_KEY
 
     $script:ModuleOutputRoot = Join-Path $script:OutputRoot $script:ModuleName
     New-Item -Type Directory -Path $script:ModuleOutputRoot -Force | Out-Null
@@ -65,7 +62,7 @@ $script:InitializeTasks += @()
 $script:BuildTasks += $BuildTasks -contains "Build-DotNet" ?
                     @("Publish-DotNet", "Build-Module") :
                     @("Build-Module")
-$script:PublishTasks += @("Publish-Module")
+$script:PublishTasks += @("Pack-Module")
 $script:TestTasks += @("Import-Module", "Test-PowerShell", "Test-PowerShellSyntax")
 $script:PushTasks += @("Push-Module")
 $script:CheckpointTasks += @()
