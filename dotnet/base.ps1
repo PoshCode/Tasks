@@ -8,6 +8,7 @@
 param(
     [ValidateScript({ "../common/base.ps1" })]
     $Extends,
+
     # dotnet build configuration parameter (Debug or Release)
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = ($Env:IB_CONFIGURATION ?? 'Release'),
@@ -42,7 +43,7 @@ param(
 
     # Sets framework for solution, included in build output path
     [ValidatePattern('^net\d+\.\d+$')]
-    $TargetFramework = ($Env:DOTNET_TARGET_FRAMEWORK ?? ("net" + $script:DotNetVersion.Split(".")[0..1] -join ".")),
+    $TargetFramework = ($Env:DOTNET_TARGET_FRAMEWORK ?? ("net" + ($Env:DOTNET_VERSION ?? (dotnet --version)).Split(".")[0..1] -join ".")),
 
     # Sets runtime for solution, included in build output path
     [ValidateSet('linux-x64', 'win-x64', 'any')]
@@ -88,7 +89,6 @@ Enter-Build {
     $script:SolutionOutputRoot ??= Join-Path $script:OutputRoot $script:SolutionName
     $script:SolutionTestResultsRoot = Join-Path $Script:TestResultsRoot $script:SolutionName
 
-    $script:DotNetVersion ??= $Env:DOTNET_VERSION ?? (dotnet --version)
 
     # These environment variables aren't just inputs, they're used by our Directory.Build.props
     $ENV:IB_TARGET_RUNTIME = $script:TargetRuntime
