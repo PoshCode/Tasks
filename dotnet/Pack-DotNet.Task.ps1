@@ -1,4 +1,3 @@
-#! If this is trying to pack a test project, you must add <IsTestProject>true</IsTestProject> to the project file.
 Add-BuildTask Pack-DotNet @{
     If      = {
         [bool]$DotNetProjects.Where({ $_.IsPackable }, "First", 1)
@@ -13,11 +12,12 @@ Add-BuildTask Pack-DotNet @{
         $script:DotNetPackRoot = New-Item $script:DotNetPackRoot -ItemType Directory -Force -ErrorAction SilentlyContinue | Convert-Path
 
         $local:options = @{
-            "-output" = $script:DotNetPackRoot
+            "-configuration" = $script:Configuration
+            "-output"        = $script:DotNetPackRoot
+            "p"              = "Version=$(${script:Version}.InformationalVersion)"
         }
 
         Write-Build Yellow "Packing $SolutionName"
-        $options["p"] = "Version=$(${script:Version}.InformationalVersion)"
 
         Write-Build Yellow "dotnet pack $DotNetSolutionFile --no-build --include-symbols $(($options.GetEnumerator().ForEach({"$($_.key) $($_.value)"})) -join ' ')"
         dotnet pack $DotNetSolutionFile --no-build --include-symbols @options

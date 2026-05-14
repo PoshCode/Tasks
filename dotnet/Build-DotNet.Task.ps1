@@ -7,8 +7,10 @@ Add-BuildTask Build-DotNet @{
         $DotNetProjects.ForEach({ Join-Path $_.OutDir $_.TargetFileName })
     }
     Jobs    = "Restore-DotNet", "Get-Version", {
-        $local:options = @{} + $script:dotnetOptions
-        $options["p"] = "Version=$(${script:Version}.InformationalVersion)"
+        $local:options = @{
+            "-configuration" = $script:Configuration
+            "p"              = "Version=$(${script:Version}.InformationalVersion)"
+        } + $script:dotnetOptions
 
         Write-Build Yellow "dotnet build $DotNetSolutionFile --no-restore $(($options.GetEnumerator().ForEach({"-$($_.key) $($_.value)"})) -join ' ')"
         # Invoke-BuildExec [-Command] ScriptBlock [[-ExitCode] Int32[]] [[-ErrorMessage] String] [-Echo] [-StdErr]

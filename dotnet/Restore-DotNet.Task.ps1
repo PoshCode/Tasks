@@ -18,7 +18,10 @@ Add-BuildTask Restore-DotNet @{
     #     $Project.BaseIntermediateOutputRoot | Join-Path -ChildPath "project.assets.json"
     # }
     Jobs = "Install-DotNetTool", {
-        $local:options = @{} + $script:dotnetOptions
+        $local:options = @{
+            "p" = "Configuration=$script:Configuration"
+        } + $script:dotnetOptions
+
         if ($script:NugetConfigFile) {
             $options["-configfile"] = $script:NugetConfigFile
         }
@@ -32,7 +35,7 @@ Add-BuildTask Restore-DotNet @{
             foreach ($Property in $Project.PSObject.Properties.Name -ne "Path") {
                 if ($RestoreOutput.Properties.$Property) {
                     if ($Property -match "^Is") {
-                        $Project.$Property = [bool]::Parse($RestoreOutput.Properties.$Property)
+                        $Project.$Property = $RestoreOutput.Properties.$Property -eq "true"
                     } else {
                         $Project.$Property = $RestoreOutput.Properties.$Property
                     }

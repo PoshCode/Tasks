@@ -8,8 +8,10 @@ Add-BuildTask Publish-DotNet @{
     Jobs    = "Build-DotNet", "Pack-DotNet", {
         $script:DotNetPublishRoot = New-Item $script:DotNetPublishRoot -ItemType Directory -Force -ErrorAction SilentlyContinue | Convert-Path
 
-        $local:options = @{} + $script:dotnetOptions
-        $options["p"] = "Version=$(${script:Version}.InformationalVersion)"
+        $local:options = @{
+            "-configuration" = $script:Configuration
+            "p"              = "Version=$(${script:Version}.InformationalVersion)"
+        } + $script:dotnetOptions
 
         Set-Location (Split-Path $DotNetSolutionFile)
         Write-Build Yellow "dotnet publish $DotNetSolutionFile --no-build --no-restore $(($options.GetEnumerator().ForEach({"-$($_.key) $($_.value)"})) -join ' ')"

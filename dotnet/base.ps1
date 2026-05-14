@@ -89,10 +89,8 @@ Enter-Build {
     $script:SolutionOutputRoot ??= Join-Path $script:OutputRoot $script:SolutionName
     $script:SolutionTestResultsRoot = Join-Path $Script:TestResultsRoot $script:SolutionName
 
-
     # These environment variables aren't just inputs, they're used by our Directory.Build.props
     $ENV:IB_TARGET_RUNTIME = $script:TargetRuntime
-    $ENV:IB_CONFIGURATION = $script:Configuration
 
     $script:DotNetProjects = dotnet sln $script:DotNetSolutionFile list |
         Where-Object { $_ -like "*.*proj" } |
