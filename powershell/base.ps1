@@ -62,7 +62,7 @@ $script:InitializeTasks += @()
 $script:BuildTasks += $BuildTasks -contains "Build-DotNet" ?
                     @("Publish-DotNet", "Build-Module") :
                     @("Build-Module")
-$script:PublishTasks += @("Pack-Module")
+$script:PackTasks += @("Pack-Module")
 $script:TestTasks += @("Import-Module", "Test-PowerShell", "Test-PowerShellSyntax")
 $script:PushTasks += @("Push-Module")
 $script:CheckpointTasks += @()

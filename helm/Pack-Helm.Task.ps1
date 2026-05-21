@@ -1,7 +1,6 @@
 # The actual helm command is helm package
 # But we alias it as pack and publish for consistency with other frameworks
 Add-BuildTask Pack-Helm Package-Helm
-Add-BuildTask Publish-Helm Package-Helm
 
 Add-BuildTask Package-Helm @{
     Inputs  = { Get-ChildItem $script:HelmCharts -File -Recurse }

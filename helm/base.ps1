@@ -51,7 +51,7 @@ Enter-Build {
 # Add the helm tasks to the common tasks
 $script:InitializeTasks += @("Install-Helm", "Restore-Helm")
 $script:BuildTasks += @("Build-Helm")
-$script:PublishTasks += @("Package-Helm")
+$script:PackTasks += @("Package-Helm")
 $script:TestTasks += @("Test-Helm")
 $script:PushTasks += @("Push-Helm")
 $script:CheckpointTasks += @()

@@ -38,7 +38,7 @@ Add-BuildTask Pack-Module @{
         }
 
         function Convert-Required {
-            [OutputType([Microsoft.PowerShell.Commands.ModuleSpecification])]
+            [OutputType([string])]
             [CmdletBinding()]
             param(
                 [Parameter(Mandatory, ValueFromPipeline)]
@@ -48,12 +48,16 @@ Add-BuildTask Pack-Module @{
             process {
                 # We require that the RequiredModules manifest and psm1 have the same name
                 $ModuleData = Import-PowerShellDataFile ([IO.Path]::ChangeExtension($Module.Path, ".psd1"))
-                [Microsoft.PowerShell.Commands.ModuleSpecification[]]$Required = $ModuleData.RequiredModules
-
-                $Required.Where{
+                [Microsoft.PowerShell.Commands.ModuleSpecification[]]$RequiredModules = $ModuleData.RequiredModules
+                $Required = $RequiredModules.Where{
                     # Don't put external dependencies in the nuspec
                     $_.Name -notin $ExternalModuleDependencies
-                }.ForEach{
+                }
+                Wait-Debugger
+                if ($Required.Count -eq 0) { return }
+
+                "<dependencies>"
+                $Required.ForEach{
                     $Version = if ($_.RequiredVersion) {
                         'version="[{0}]"' -f $_.RequiredVersion
                     } elseif ($_.Version -and $_.MaximumVersion) {
@@ -64,11 +68,18 @@ Add-BuildTask Pack-Module @{
                         'version="[, {0}]"' -f ($_.MaximumVersion -replace "\*$", "99999")
                     } elseif ($_.Version) {
                         'version="{0}"' -f $_.Version
+                    } elseif (($Actual = Get-Module $_.Name)) {
+                        # Best practice is not to specify an upper bound unless you KNOW of an incompatibility
+                        'version="{0}"' -f $Actual.Version.ToString(3)
+                    } elseif (($Actual = (Get-Module $_.Name -ListAvailable)[0])) {
+                        # Best practice is not to specify an upper bound unless you KNOW of an incompatibility
+                        'version="{0}"' -f $Actual.Version.ToString(3)
                     } else {
-                        ""
+                        'version="0.0"'
                     }
                     '<dependency id="{0}" {1}/>' -f $_.Name, $Version
                 }
+                "</dependencies>"
             }
         }
 
@@ -85,8 +96,8 @@ Add-BuildTask Pack-Module @{
         <owners>{3}</owners>
         <description>{4}</description>
         <releaseNotes>{5}</releaseNotes>
-        <copyright>{7}</copyright>
         <requireLicenseAcceptance>{6}</requireLicenseAcceptance>
+        <copyright>{7}</copyright>
         <tags>{8}</tags>
         {9}
     </metadata>
@@ -101,10 +112,10 @@ Add-BuildTask Pack-Module @{
         $Module.Copyright,
         (@(Get-ModuleTag -Module $Module -Tags $Module.PSData.Tags) -join " "),
         (@(
-            ($Module.ProjectUri ? "<projectUrl>$($Module.ProjectUri)</projectUrl>" : ""),
-            ($Module.IconUri ? "<iconUrl>$($Module.IconUri)</iconUrl>" : ""),
-            ($Module.LicenseUri ? "<licenseUrl>$($Module.LicenseUri)</licenseUrl>" : ""),
-            (Convert-Required $Module $Module.PSData.ExternalModuleDependencies)
+            ($Module.ProjectUri ? "<projectUrl>$($Module.ProjectUri)</projectUrl>" : "")
+            ($Module.IconUri ? "<iconUrl>$($Module.IconUri)</iconUrl>" : "")
+            ($Module.LicenseUri ? "<licenseUrl>$($Module.LicenseUri)</licenseUrl>" : "")
+            @(Convert-Required $Module $Module.PSData.ExternalModuleDependencies)
         ) -join "`n        ")
         | Set-Content $NuspecPath -Encoding UTF8
 

@@ -148,7 +148,7 @@ Enter-Build {
 # Add the dotnet tasks to the common tasks
 $script:InitializeTasks += @("Restore-DotNet")
 $script:BuildTasks += @("Build-DotNet")
-$script:PublishTasks += @("Pack-DotNet", "Publish-DotNet")
+$script:PackTasks += @("Pack-DotNet", "Publish-DotNet")
 $script:TestTasks += $script:BuildSystem -eq "None" ? @("Test-DotNet") : @("Test-DotNet", "Convert-Trx2JUnit", "Convert-Coverage")
 $script:PushTasks += @("Push-DotNet")
 $script:CheckpointTasks += @()

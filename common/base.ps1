@@ -196,7 +196,7 @@ $script:BuildTasks = @(
     # Otherwise it complicates our ability to cache dependencies
     "Get-Version"
 )
-$script:PublishTasks = @()
+$script:PackTasks = @()
 $script:TestTasks = @()
 $script:PushTasks = @()
 $script:CheckpointTasks = @("Tag-Source")
@@ -207,7 +207,7 @@ Add-BuildTask CI @(
     "Initialize"
     "Build"
     "Test"
-    "Publish"
+    "Pack"
     "Push"
     "Tag-Source"
 )
