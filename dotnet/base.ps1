@@ -19,7 +19,7 @@ param(
             # TODO: See if we can use the argument completer described here:
             # https://github.com/nightroman/Invoke-Build/blob/main/Docs/Argument-Completers.md
             # Because this doesn't work with the extends pattern
-            Get-ChildItem -Path $PSScriptRoot -Filter *.sln |
+            Get-ChildItem -Path $PSScriptRoot -Filter *.sln* |
                 Split-Path -LeafBase |
                 Where-Object { $_ -like "*$wordToComplete*" } |
                 ForEach-Object { [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_) }
@@ -27,7 +27,7 @@ param(
     [Parameter(Position = 0)]
     [ValidateScript({
             if ($_ -match '[\\/]') {
-                (Test-Path $_ -IsValid) -and ($_ -ilike '*.sln')
+                (Test-Path $_ -IsValid) -and ($_ -ilike '*.sln*')
             } else {
                 # Name or glob (e.g. "LD.EPS", "*", "*.sln")
                 $true
@@ -70,7 +70,7 @@ Enter-Build {
         }
         Convert-Path $solutionPath
     } else {
-        $filter = if ($Solution -ilike '*.sln') { $Solution } else { "${Solution}.sln" }
+        $filter = if ($Solution -ilike '*.sln*') { $Solution } else { "${Solution}.sln*" }
         $found = Get-ChildItem -Path $BuildRoot -Filter $filter -ErrorAction Ignore
         if (-not $found) {
             throw "No solution file matching '$filter' found in $BuildRoot"
