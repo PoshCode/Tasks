@@ -19,17 +19,18 @@ Add-BuildTask Restore-DotNet @{
     # }
     Jobs = "Install-DotNetTool", {
         $local:options = @{
-            "p" = "Configuration=$script:Configuration"
+            "p" = "Configuration=$script:Configuration,SolutionName=$([IO.Path]::GetFileNameWithoutExtension($script:DotNetSolutionFile))"
         } + $script:dotnetOptions
 
         if ($script:NugetConfigFile) {
             $options["-configfile"] = $script:NugetConfigFile
         }
 
-        Write-Build Yellow "dotnet restore $DotNetSolutionFile $(($options.GetEnumerator().ForEach({"$($_.key) $($_.value)"})) -join ' ')"
+        Write-Build Yellow "# dotnet restore $DotNetSolutionFile $(($options.GetEnumerator().ForEach({"-$($_.key) $($_.value)"})) -join ' ')"
 
         # dotnet restore $DotNetSolutionFile @options
         foreach ($Project in $script:DotNetProjects) {
+            Write-Build Yellow "dotnet restore $($Project.Path) $(($options.GetEnumerator().ForEach({"-$($_.key) $($_.value)"})) -join ' ') -getProperty:$($Project.PSObject.Properties.Name -ne "Path" -join ",")"
             $RestoreOutput = dotnet restore $Project.Path @options -getProperty:$($Project.PSObject.Properties.Name -ne "Path" -join ",") | ConvertFrom-Json -AsHashtable
             if (!$?) { throw "dotnet restore failed for project $($Project.Path)" }
             foreach ($Property in $Project.PSObject.Properties.Name -ne "Path") {
@@ -41,6 +42,7 @@ Add-BuildTask Restore-DotNet @{
                     }
                 }
             }
+            $Project | ConvertTo-Json -Compress | Out-File (Join-Path $Project.BaseIntermediateOutputRoot "project.info.json")
         }
     }
 }
